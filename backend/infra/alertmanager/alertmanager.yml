@@ -1,0 +1,21 @@
+# Alertmanager reçoit les alertes déclenchées par Prometheus (voir
+# ../prometheus/alerts.yml) et décide qui prévenir. Configuration minimale
+# ici : un récepteur "null" (n'envoie nulle part) pour que tout le système
+# fonctionne dès le premier lancement sans configuration externe.
+#
+# À FAIRE avant un usage réel : remplacer le récepteur par un vrai canal —
+# exemples les plus courants et gratuits :
+#   - email (SMTP) : voir la doc Alertmanager, section "email_configs"
+#   - Slack : générer une "Incoming Webhook URL" gratuite sur slack.com/apps
+#   - Discord/Telegram : webhooks également gratuits
+
+route:
+  receiver: "default"
+
+receivers:
+  - name: "default"
+    # Exemple pour Slack, à décommenter et compléter :
+    # slack_configs:
+    #   - api_url: "https://hooks.slack.com/services/VOTRE/WEBHOOK/ICI"
+    #     channel: "#alertes-production"
+    #     send_resolved: true

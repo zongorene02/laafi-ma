@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icône de camouflage « Calculatrice » (dessin vectoriel simple). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path android:fillColor="#FF2C3036" android:pathData="M8,2h32a6,6 0,0 1,6,6v32a6,6 0,0 1,-6,6h-32a6,6 0,0 1,-6,-6v-32a6,6 0,0 1,6,-6z"/>
+    <path android:fillColor="#FFDDE3EA" android:pathData="M11,8h26a2,2 0,0 1,2,2v6a2,2 0,0 1,-2,2h-26a2,2 0,0 1,-2,-2v-6a2,2 0,0 1,2,-2z"/>
+    <path android:fillColor="#FF5A5F66" android:pathData="M10,22h7v6h-7z M20.5,22h7v6h-7z M10,31h7v6h-7z M20.5,31h7v6h-7z M10,40h17.5v2h-17.5z"/>
+    <path android:fillColor="#FFFF9F0A" android:pathData="M31,22h7v6h-7z M31,31h7v11h-7z"/>
+</vector>

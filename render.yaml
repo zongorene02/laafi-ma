@@ -1,0 +1,34 @@
+# Déploiement de l'API sur Render (offre gratuite), voir docs/DEPLOY.md.
+# 512 Mo de RAM : pas de modèles d'IA, donc ni voix ni mooré/dioula (503).
+services:
+  - type: web
+    name: laafi-ma-api
+    runtime: python
+    plan: free
+    region: frankfurt
+    rootDir: backend/services/core-service
+    buildCommand: pip install -r requirements-lite.txt
+    # --proxy-headers : derrière le proxy de Render, sans cela la limite de
+    # débit par adresse IP compterait tout le monde comme une seule personne.
+    startCommand: sh entrypoint.sh uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips='*'
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.7
+      - key: ENVIRONMENT
+        value: production
+      - key: LOAD_MODELS_ON_STARTUP
+        value: "false"
+      - key: AUTO_BOOTSTRAP
+        value: "true"
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: CORS_ALLOWED_ORIGINS
+        value: '["https://renezongo.github.io"]'
+      # Les trois valeurs suivantes sont demandées par Render à la création.
+      - key: DATABASE_URL
+        sync: false
+      - key: ADMIN_EMAILS
+        sync: false
+      - key: ADMIN_BOOTSTRAP_PASSWORD
+        sync: false

@@ -1,0 +1,51 @@
+# Construit l'APK Android de démonstration et le publie dans la release "demo".
+# Signé avec une clé de debug : à réinstaller après chaque nouvelle version,
+# et jamais à publier sur le Play Store.
+
+name: APK de démonstration
+
+on:
+  push:
+    branches: ["main"]
+    paths: ["frontend/**", ".github/workflows/build-apk.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk
+  cancel-in-progress: true
+
+env:
+  API_BASE_URL: ${{ vars.API_BASE_URL || 'https://laafi-ma-api.onrender.com' }}
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.2"
+          cache: true
+
+      - name: Build de l'APK
+        working-directory: frontend
+        run: |
+          flutter pub get
+          flutter build apk --release --target-platform android-arm,android-arm64 --dart-define=API_BASE_URL="$API_BASE_URL"
+
+      - name: Publier dans la release demo
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp frontend/build/app/outputs/flutter-apk/app-release.apk laafi-ma-demo.apk
+          gh release view demo >/dev/null 2>&1 || gh release create demo --prerelease --title "Démo Laafi Ma" --notes "APK de démonstration, jamais testé sur un vrai téléphone. Sans voix ni mooré/dioula côté serveur."
+          gh release upload demo laafi-ma-demo.apk --clobber

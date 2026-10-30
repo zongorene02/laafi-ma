@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Couleurs de l'icône de camouflage « Calculatrice ». -->
+<resources>
+    <color name="calculator_icon_background">#FF2C3036</color>
+</resources>

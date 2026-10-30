@@ -1,0 +1,71 @@
+# Environnements virtuels Python (recréés depuis requirements.txt, jamais commités)
+venv/
+*/venv/
+**/venv/
+
+__pycache__/
+*.pyc
+
+# Secrets et config locale — chaque environnement (dev/staging/prod) a le sien,
+# seul .env.example (le modèle documenté) est commité.
+.env
+*/firebase-credentials*.json
+
+# Modèles téléchargés/entraînés : trop volumineux pour git, à distribuer
+# autrement (voir README de chaque service). On ignore le CONTENU mais on garde
+# le dossier lui-même (via .gitkeep) : le Dockerfile de core-service fait un
+# `COPY models/`, qui échouait sur un dépôt fraîchement cloné puisque le
+# dossier n'existait pas encore.
+backend/services/core-service/models/*
+!backend/services/core-service/models/.gitkeep
+
+# Fichiers générés pendant les tests manuels
+*.wav
+*.mp4
+!backend/services/*/app/**/*.wav
+
+# Base de données SQLite locale (dev uniquement — jamais la vraie base de
+# production, qui est PostgreSQL, voir backend/infra/docker-compose.yml)
+*.db
+
+# Médias servis par l'API (audios TTS générés à la demande, audios humains
+# téléversés) : contenu d'exploitation, pas du code (voir MEDIA_DIR).
+backend/services/core-service/media/
+
+.DS_Store
+Thumbs.db
+
+# Caches des outils de qualité de code (ruff, mypy, pytest) : entièrement
+# régénérables, propres à une machine, et volumineux — ils n'ont rien à faire
+# dans l'historique du dépôt.
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Dépendances et build du tableau de bord admin (React/Vite), régénérés par
+# `npm install` / `npm run build`. `package-lock.json` reste commité.
+admin/node_modules/
+admin/dist/
+
+# État local des outils (Claude Code, etc.) — jamais partagé entre machines.
+.claude/
+
+# Artefacts laissés par des lancements manuels en local : logs de processus et
+# fichier stdin vide utilisé pour éviter les blocages `input()` au lancement hors Docker.
+*.log
+empty_stdin.txt
+
+# Build Flutter (régénéré par `flutter pub get`/`flutter build`, jamais commité).
+# `pubspec.lock` reste COMMITÉ volontairement : contrairement à un package Dart, une
+# application doit figer ses versions exactes de dépendances pour des builds reproductibles.
+frontend/**/.dart_tool/
+frontend/**/build/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.packages
+
+# Dossier de candidature : contient des données personnelles (email, numéros
+# de téléphone, ville) et des pièces volumineuses (vidéo de démonstration,
+# captures, présentation). Il n'a pas à voyager avec le code, y compris dans
+# un dépôt privé — à sauvegarder séparément.
+Candidature/

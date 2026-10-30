@@ -1,0 +1,30 @@
+# Configuration STATIQUE de Traefik (le comportement global du gateway,
+# qui ne change pas à chaud). Le routage vers chaque service, lui, est
+# défini dynamiquement via des labels Docker directement dans
+# docker-compose.yml — Traefik les lit automatiquement (provider "docker"),
+# pas besoin de dupliquer la config des routes à deux endroits.
+
+api:
+  dashboard: true
+  insecure: false # le tableau de bord n'est plus exposé "en clair" sur un port séparé : il passe maintenant par le routeur défini dans docker-compose.yml, protégé par une authentification (voir le service "traefik", label "dashboard-auth")
+
+entryPoints:
+  web:
+    address: ":80" # tout le trafic applicatif (les services, via leurs routeurs /api...)
+  traefik:
+    address: ":8090" # dédié au tableau de bord uniquement — évite que son usage interne de "/api" n'entre en collision avec le "/api" de nos propres services sur le port 80
+
+# Pas de HTTPS local pour l'instant — décision volontaire (voir
+# docs/apprentissage/journal.md, Entrée 23) : la configuration HTTPS locale
+# (mkcert) ne se transfère pas à la production, où un vrai nom de domaine
+# permettra d'utiliser Let's Encrypt via Traefik directement (bien plus
+# simple : un certificat automatique, sans rien générer à la main). Ajouter
+# du HTTPS local maintenant n'aurait fait qu'ajouter de la friction (droits
+# administrateur, fichier hosts...) sans débloquer de fonctionnalité.
+
+providers:
+  docker:
+    exposedByDefault: false # seuls les conteneurs avec le label "traefik.enable=true" sont exposés publiquement — évite d'exposer un service par erreur
+
+metrics:
+  prometheus: {} # Traefik expose lui-même des métriques (nombre de requêtes routées, latence...), scrappées par Prometheus comme n'importe quel autre service

@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  /* Même couleur graine que l'app Flutter (terre cuite) — cohérence visuelle
+     entre l'app grand public et le tableau de bord admin. */
+  --color-brand-50: #fdf3ee;
+  --color-brand-100: #fbe3d6;
+  --color-brand-500: #c1652f;
+  --color-brand-600: #b5541f;
+  --color-brand-700: #94431a;
+}
+
+body {
+  background-color: #faf7f5;
+}

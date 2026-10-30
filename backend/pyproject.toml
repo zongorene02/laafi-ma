@@ -1,0 +1,43 @@
+# Configuration de qualité de code du backend de Laafi Ma (core-service).
+# Invoquée depuis le dossier du service : `ruff check --config ../../pyproject.toml .`,
+# `ruff format --config ../../pyproject.toml .` et
+# `mypy --config-file ../../pyproject.toml app` (voir son README).
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+exclude = ["venv", "migrations/versions", "notebooks"]
+
+[tool.ruff.lint]
+# E/F : erreurs pycodestyle/pyflakes de base (bugs probables, imports morts...)
+# I   : tri des imports (remplace isort)
+# UP  : modernise la syntaxe pour la version Python ciblée (ex: typing.Optional -> X | None)
+# B   : bugbear, attrape des pièges Python classiques (mutable default arg, etc.)
+# SIM : simplifications évidentes (ex: `if x: return True else: return False` -> `return x`)
+select = ["E", "F", "I", "UP", "B", "SIM"]
+# Les endpoints FastAPI utilisent `Depends(...)` comme valeur par défaut d'argument
+# par CONCEPTION du framework (pas un vrai piège de mutable default) — sans cette
+# exception, B008 signalerait une fausse alerte sur pratiquement chaque endpoint.
+ignore = ["B008"]
+
+[tool.ruff.lint.per-file-ignores]
+# Les fichiers de test important des fixtures via `from conftest import *` ou
+# définissent des faux modèles volontairement non typés strictement.
+"tests/*" = ["E501"]
+# Scripts d'expérimentation ponctuels (entraînement, benchmarks manuels) —
+# jamais importés par l'application ni testés, pas soumis à la même rigueur
+# que le code réellement servi en production.
+"scripts/*" = ["E501", "SIM115"]
+
+[tool.mypy]
+python_version = "3.13"
+warn_unused_ignores = true
+warn_redundant_casts = true
+check_untyped_defs = true
+# Strict sur NOTRE code, permissif sur les bibliothèques ML tierces qui ne
+# publient pas de stubs complets (torch, transformers, TTS...) — les
+# retyper nous-mêmes n'apporterait rien, l'objectif est d'attraper les
+# erreurs dans le code qu'on écrit, pas de forcer des stubs sur tout
+# l'écosystème PyPI.
+ignore_missing_imports = true
+exclude = ["venv", "migrations/versions", "notebooks", "scripts"]
