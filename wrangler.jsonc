@@ -1,0 +1,12 @@
+// Worker Cloudflare qui publie le site statique : application web à la racine,
+// console admin sous /admin/. `wrangler deploy` lance le build puis envoie site/.
+{
+  "name": "laafi-ma",
+  "compatibility_date": "2026-10-01",
+  "build": {
+    "command": "bash scripts/cloudflare-build.sh"
+  },
+  "assets": {
+    "directory": "./site"
+  }
+}

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Construit le site publié par Cloudflare Pages : l'application web à la racine,
-# la console admin sous /admin/. Commande de build du projet Cloudflare, lancée
+# Construit le site publié par Cloudflare : l'application web à la racine,
+# la console admin sous /admin/. Lancé par `wrangler deploy` (voir wrangler.jsonc)
 # depuis la racine du dépôt. Flutter n'existe pas dans l'image de Cloudflare :
 # on clone la même version que la machine de développement et que la CI.
 set -euo pipefail

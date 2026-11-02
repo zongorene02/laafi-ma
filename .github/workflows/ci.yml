@@ -152,10 +152,10 @@ jobs:
       - name: Vérification des types et build
         run: npm run build
 
-  # Exécute le script de build de Cloudflare Pages sur le même système que son
+  # Exécute le script de build du site Cloudflare sur le même système que son
   # image (Ubuntu 22.04) : une erreur s'y voit ici, sans compte Cloudflare.
   cloudflare:
-    name: Build Cloudflare Pages
+    name: Build du site Cloudflare
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4

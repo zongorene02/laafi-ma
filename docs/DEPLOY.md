@@ -4,9 +4,9 @@ Pas de Docker : l'API tourne sur le runtime Python natif de Render.
 
 | Partie | Hébergeur | Adresse |
 |---|---|---|
-| Application web | Cloudflare Pages | `https://laafi-ma.pages.dev/` |
-| Console admin | Cloudflare Pages | `https://laafi-ma.pages.dev/admin/` |
-| Statistiques publiques | Cloudflare Pages | `https://laafi-ma.pages.dev/admin/#/public` |
+| Application web | Cloudflare Workers | `https://laafi-ma.<compte>.workers.dev/` |
+| Console admin | Cloudflare Workers | `https://laafi-ma.<compte>.workers.dev/admin/` |
+| Statistiques publiques | Cloudflare Workers | `https://laafi-ma.<compte>.workers.dev/admin/#/public` |
 | API | Render (gratuit) | `https://laafi-ma-api.onrender.com` |
 | Base de données | Neon (gratuit) | privée |
 | APK de démonstration | GitHub Releases | release `demo` du dépôt |
@@ -54,21 +54,18 @@ et créez aussi sur GitHub la variable `API_BASE_URL` (**Settings > Secrets and
 variables > Actions > Variables**) pour l'APK, puis relancez le workflow **APK
 de démonstration**.
 
-## 3. Cloudflare Pages (application web et console)
+## 3. Cloudflare (application web et console)
 
 1. Créez un compte sur [cloudflare.com](https://dash.cloudflare.com/sign-up).
-2. Ouvrez **Workers & Pages > Create > Pages > Connect to Git**, puis autorisez
-   GitHub et choisissez le dépôt `laafi-ma`.
-3. Nommez le projet `laafi-ma` et choisissez la branche `main`.
-4. Réglez le build :
-   - **Framework preset :** None ;
-   - **Build command :** `bash scripts/cloudflare-build.sh` ;
-   - **Build output directory :** `site`.
-5. Validez. Le premier build prend plusieurs minutes.
-
-Si Cloudflare impose un autre nom que `laafi-ma.pages.dev`, ajoutez la nouvelle
-adresse dans `CORS_ALLOWED_ORIGINS` sur Render : sinon l'application ne pourra
-pas joindre l'API.
+2. Ouvrez **Workers & Pages > Create > Worker > Import a repository**, puis
+   autorisez GitHub et choisissez le dépôt `laafi-ma`.
+3. Nommez le projet `laafi-ma` et validez. `wrangler.jsonc` indique à Cloudflare
+   comment construire et publier le site. Le premier build prend plusieurs
+   minutes.
+4. Notez l'adresse du Worker, de la forme `https://laafi-ma.<compte>.workers.dev`
+   (**Settings > Domains & Routes**).
+5. Ajoutez cette adresse à `CORS_ALLOWED_ORIGINS` dans `render.yaml` : sinon
+   l'application ne pourra pas joindre l'API.
 
 GitHub Actions reste utilisé pour les tests et pour construire l'APK : Cloudflare
 ne fait que publier le site.
