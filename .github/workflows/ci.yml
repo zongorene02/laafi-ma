@@ -68,7 +68,7 @@ jobs:
         run: mypy --config-file ../../pyproject.toml app
 
       - name: Tests
-        run: pytest tests/ -v
+        run: python -m pytest tests/ -v
 
       - name: Migrations et seed sur PostgreSQL
         env:
