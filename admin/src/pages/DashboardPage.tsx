@@ -8,8 +8,10 @@ import StatCard from "../components/StatCard";
 import { Alert, Loading, PageHeader } from "../components/ui";
 import { cardClass } from "../lib/styles";
 
-// Palette catégorielle validée (ordre fixe) : brouillon puis validé.
+// Palette catégorielle validée (ordre fixe) : brouillon, sourcé, validé. Le
+// tableau sous le graphique donne les valeurs (contraste de l'aqua < 3:1).
 const SERIES_DRAFT = "#eb6834";
+const SERIES_SOURCED = "#1baf7a";
 const SERIES_VALIDATED = "#2a78d6";
 
 export default function DashboardPage() {
@@ -26,10 +28,10 @@ export default function DashboardPage() {
   if (!stats) return <Loading />;
 
   const contentData = [
-    { name: "Base de réponses", draft: stats.kb.draft, validated: stats.kb.validated },
-    { name: "Capsules", draft: stats.capsules.draft, validated: stats.capsules.validated },
+    { name: "Base de réponses", ...stats.kb },
+    { name: "Capsules", ...stats.capsules },
   ];
-  const hasContent = contentData.some((d) => d.draft + d.validated > 0);
+  const hasContent = contentData.some((d) => d.draft + d.sourced + d.validated > 0);
 
   return (
     <div className="space-y-6">
@@ -77,6 +79,7 @@ export default function DashboardPage() {
                   <Tooltip cursor={{ fill: "rgba(0,0,0,0.04)" }} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Bar dataKey="draft" name="Brouillons" fill={SERIES_DRAFT} radius={[4, 4, 0, 0]} maxBarSize={48} />
+                  <Bar dataKey="sourced" name="Sourcés, non relus" fill={SERIES_SOURCED} radius={[4, 4, 0, 0]} maxBarSize={48} />
                   <Bar dataKey="validated" name="Validés" fill={SERIES_VALIDATED} radius={[4, 4, 0, 0]} maxBarSize={48} />
                 </BarChart>
               </ResponsiveContainer>
@@ -87,6 +90,7 @@ export default function DashboardPage() {
                 <tr>
                   <th scope="col" className="py-1 font-medium">Contenu</th>
                   <th scope="col" className="py-1 text-right font-medium">Brouillons</th>
+                  <th scope="col" className="py-1 text-right font-medium">Sourcés, non relus</th>
                   <th scope="col" className="py-1 text-right font-medium">Validés</th>
                 </tr>
               </thead>
@@ -95,6 +99,7 @@ export default function DashboardPage() {
                   <tr key={row.name} className="border-t border-gray-100">
                     <th scope="row" className="py-1.5 font-normal text-gray-800">{row.name}</th>
                     <td className="py-1.5 text-right">{row.draft}</td>
+                    <td className="py-1.5 text-right">{row.sourced}</td>
                     <td className="py-1.5 text-right">{row.validated}</td>
                   </tr>
                 ))}

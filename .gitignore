@@ -13,9 +13,7 @@ __pycache__/
 
 # Modèles téléchargés/entraînés : trop volumineux pour git, à distribuer
 # autrement (voir README de chaque service). On ignore le CONTENU mais on garde
-# le dossier lui-même (via .gitkeep) : le Dockerfile de core-service fait un
-# `COPY models/`, qui échouait sur un dépôt fraîchement cloné puisque le
-# dossier n'existait pas encore.
+# le dossier lui-même (via .gitkeep).
 backend/services/core-service/models/*
 !backend/services/core-service/models/.gitkeep
 
@@ -25,7 +23,7 @@ backend/services/core-service/models/*
 !backend/services/*/app/**/*.wav
 
 # Base de données SQLite locale (dev uniquement — jamais la vraie base de
-# production, qui est PostgreSQL, voir backend/infra/docker-compose.yml)
+# production, qui est PostgreSQL, voir docs/DEPLOY.md)
 *.db
 
 # Médias servis par l'API (audios TTS générés à la demande, audios humains
@@ -51,7 +49,7 @@ admin/dist/
 .claude/
 
 # Artefacts laissés par des lancements manuels en local : logs de processus et
-# fichier stdin vide utilisé pour éviter les blocages `input()` au lancement hors Docker.
+# fichier stdin vide utilisé pour éviter les blocages `input()` au lancement.
 *.log
 empty_stdin.txt
 

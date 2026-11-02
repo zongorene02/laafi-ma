@@ -7,14 +7,15 @@ import '../../../core/l10n/strings.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/dates.dart';
 import '../../../shared/widgets/laafi_scaffold.dart';
+import '../../../shared/widgets/provisional_note.dart';
 import '../data/agent_repository.dart';
 import 'agent_gate.dart';
 import 'agent_providers.dart';
 import 'beneficiary_screens.dart';
 import 'decision_aid_screen.dart';
 
-/// Visite : type, signes de danger cochés (liste validée de l'API) et
-/// conseil d'orientation tiré des conseils validés de chaque signe.
+/// Visite : type, signes de danger cochés (liste servie par l'API) et
+/// conseil d'orientation tiré des conseils de chaque signe.
 class VisitFormScreen extends ConsumerStatefulWidget {
   const VisitFormScreen({super.key, required this.beneficiaryId, this.id});
 
@@ -135,6 +136,7 @@ class _VisitFormScreenState extends ConsumerState<VisitFormScreen> {
                   ? const InfoBanner(text: S.noDangerSignsCached)
                   : Column(
                       children: [
+                        if (list.any((s) => s.provisional)) const ProvisionalNote(),
                         for (final sign in list)
                           CheckboxListTile(
                             value: _signs.contains(sign.id),

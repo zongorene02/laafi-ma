@@ -22,7 +22,7 @@ final agentPendingProvider = FutureProvider.autoDispose<int>((ref) async {
   return repo.pendingCount();
 });
 
-/// Signes de danger validés (libellés français), gardés en cache pour la
+/// Signes de danger servis par l'API (libellés français), gardés en cache pour la
 /// liste à cocher des visites, même hors connexion.
 final agentDangerSignsProvider = FutureProvider.autoDispose<List<DangerSign>>((ref) async {
   final repo = ref.watch(assistantRepositoryProvider);

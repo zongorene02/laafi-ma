@@ -5,7 +5,7 @@ import { createCapsule, deleteCapsule, listCapsules, updateCapsule, uploadCapsul
 import { CAPSULE_TRACKS, type Capsule, type CapsuleTrack, type Lang, type QuizQuestion } from "../api/types";
 import { Alert, AudioPanel, Badge, LangTabs, Loading, PageHeader, StatusBadge, ValidationInfo } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
-import { LANG_LABELS, LANGS, TRACK_LABELS } from "../lib/labels";
+import { editSendsToDraft, LANG_LABELS, LANGS, TRACK_LABELS } from "../lib/labels";
 import { buildCapsulePayload, normalizeCapsuleTranslations, quizProblems, removeChoice } from "../lib/mappers";
 import { can } from "../lib/roles";
 import { btnDanger, btnPrimary, btnSecondary, btnSuccess, cardClass, inputClass, labelClass } from "../lib/styles";
@@ -126,8 +126,10 @@ export default function CapsuleEditorPage() {
       return;
     }
     if (
-      capsule?.status === "validated" &&
-      !confirm("Cette capsule est validée. L'enregistrer la renverra en brouillon jusqu'à une nouvelle validation. Continuer ?")
+      editSendsToDraft(capsule?.status) &&
+      !confirm(
+        `Cette capsule est ${capsule?.status === "sourced" ? "sourcée, non relue" : "validée"}. L'enregistrer la renverra en brouillon jusqu'à une nouvelle validation. Continuer ?`,
+      )
     ) {
       return;
     }
@@ -195,6 +197,12 @@ export default function CapsuleEditorPage() {
         <Alert kind="warning">
           <strong>Capsule validée et publiée.</strong> Toute modification enregistrée la renverra en brouillon jusqu'à
           une nouvelle validation.
+        </Alert>
+      )}
+      {capsule?.status === "sourced" && (
+        <Alert kind="warning">
+          <strong>Capsule tirée d'une source publique, relue par aucune sage-femme.</strong> Relisez-la, puis validez-la.
+          Toute modification enregistrée la renverra en brouillon.
         </Alert>
       )}
       {error && <Alert onClose={() => setError(null)}>{error}</Alert>}

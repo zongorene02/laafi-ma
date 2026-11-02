@@ -23,6 +23,9 @@ class CapsuleText {
   final String? audioKind;
 
   bool get isSynthetic => audioKind == 'synthetic';
+
+  /// L'API renvoie toutes les langues, vides quand le texte manque.
+  bool get hasText => title.trim().isNotEmpty && text.trim().isNotEmpty;
 }
 
 class QuizItem {
@@ -54,6 +57,7 @@ class Capsule {
     required this.translations,
     this.quiz = const [],
     this.license,
+    this.provisional = false,
     required this.raw,
   });
 
@@ -67,6 +71,7 @@ class Capsule {
     },
     quiz: [for (final q in (json['quiz'] as List? ?? const [])) QuizItem.fromJson((q as Map).cast<String, dynamic>())],
     license: json['license'] as String?,
+    provisional: json['provisional'] == true,
     raw: json,
   );
 
@@ -76,13 +81,20 @@ class Capsule {
   final Map<String, CapsuleText> translations;
   final List<QuizItem> quiz;
   final String? license;
+
+  /// Contenu tiré d'une source publique, relu par aucune sage-femme.
+  final bool provisional;
   final Map<String, dynamic> raw;
 
   /// Texte dans la langue demandée, en français sinon.
-  CapsuleText textIn(String lang) => translations[lang] ?? translations['fr'] ?? const CapsuleText(title: '', text: '');
+  CapsuleText textIn(String lang) {
+    final asked = translations[lang];
+    if (asked != null && asked.hasText) return asked;
+    return translations['fr'] ?? asked ?? const CapsuleText(title: '', text: '');
+  }
 
   /// Langue réellement affichée (pour la voix et l'étiquette).
-  String langShown(String lang) => translations.containsKey(lang) ? lang : 'fr';
+  String langShown(String lang) => translations[lang]?.hasText == true ? lang : 'fr';
 }
 
 class LearnRepository {

@@ -18,9 +18,18 @@ export const LANG_LABELS: Record<Lang, string> = {
 
 export const STATUS_LABELS: Record<ContentStatus, string> = {
   draft: "Brouillon",
+  sourced: "Sourcé, non relu",
   validated: "Validé",
   archived: "Archivé",
 };
+
+/** Ordre du circuit de validation, pour les filtres par statut. */
+export const CONTENT_STATUSES: readonly ContentStatus[] = ["draft", "sourced", "validated", "archived"];
+
+/** Une modification renvoie ce contenu en brouillon : à confirmer d'abord. */
+export function editSendsToDraft(status: ContentStatus | undefined): boolean {
+  return status === "sourced" || status === "validated";
+}
 
 export const TOPIC_LABELS: Record<KbTopic, string> = {
   grossesse: "Grossesse",

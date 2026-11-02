@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { listCapsules } from "../api/learn";
-import { CAPSULE_TRACKS, type Capsule, type CapsuleTrack } from "../api/types";
+import { CAPSULE_TRACKS, type Capsule, type CapsuleTrack, type ContentStatus } from "../api/types";
 import { Alert, Badge, EmptyState, Loading, PageHeader, StatusBadge } from "../components/ui";
-import { LANGS, TRACK_LABELS } from "../lib/labels";
+import { CONTENT_STATUSES, LANGS, STATUS_LABELS, TRACK_LABELS } from "../lib/labels";
 import { useAsync } from "../lib/useAsync";
 import { btnPrimary, inputClass, labelClass } from "../lib/styles";
 
 export default function CapsulesPage() {
   const [track, setTrack] = useState<CapsuleTrack | "">("");
   const { data, error, isLoading } = useAsync(() => listCapsules(track), track);
-  const capsules: Capsule[] = data ?? [];
+  const [status, setStatus] = useState<ContentStatus | "">("");
+  const capsules: Capsule[] = (data ?? []).filter((c) => !status || c.status === status);
 
   // Groupées par parcours, triées par ordre d'affichage.
   const groups = CAPSULE_TRACKS.map((t) => ({
@@ -30,7 +31,8 @@ export default function CapsulesPage() {
         }
       />
 
-      <div className="max-w-xs">
+      <div className="flex max-w-xl flex-wrap gap-4">
+        <div className="min-w-48 flex-1">
         <label htmlFor="cap-track" className={labelClass}>Parcours</label>
         <select id="cap-track" value={track} onChange={(e) => setTrack(e.target.value as CapsuleTrack | "")} className={inputClass}>
           <option value="">Tous les parcours</option>
@@ -38,6 +40,16 @@ export default function CapsulesPage() {
             <option key={t} value={t}>{TRACK_LABELS[t]}</option>
           ))}
         </select>
+        </div>
+        <div className="min-w-48 flex-1">
+          <label htmlFor="cap-status" className={labelClass}>Statut</label>
+          <select id="cap-status" value={status} onChange={(e) => setStatus(e.target.value as ContentStatus | "")} className={inputClass}>
+            <option value="">Tous les statuts</option>
+            {CONTENT_STATUSES.map((s) => (
+              <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {error && <Alert>{error}</Alert>}
@@ -45,7 +57,7 @@ export default function CapsulesPage() {
       {isLoading ? (
         <Loading />
       ) : groups.length === 0 && !error ? (
-        <EmptyState title={track ? "Aucune capsule dans ce parcours." : "Aucune capsule pour le moment."}>
+        <EmptyState title={track || status ? "Aucune capsule pour ce choix." : "Aucune capsule pour le moment."}>
           Rédigez une capsule à partir d'un contenu sourcé, puis faites-la valider.
         </EmptyState>
       ) : (

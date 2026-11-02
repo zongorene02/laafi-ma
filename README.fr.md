@@ -7,7 +7,7 @@ d'IA payante.
 
 | Module | Pour qui | Ce qu'il fait |
 |---|---|---|
-| 1. Assistant santé vocal | femmes | Question à la voix ou au texte, confirmée (« Vous avez demandé… ? ») avant la réponse ; réponse **uniquement** tirée d'une base validée par une sage-femme ; « Avez-vous compris ? » ; signes de danger signalés avec appel du centre de santé, du numéro vert ou des urgences ; question sans réponse transmise à l'équipe |
+| 1. Assistant santé vocal | femmes | Question à la voix ou au texte, confirmée (« Vous avez demandé… ? ») avant la réponse ; réponse **uniquement** tirée d'une base fixe, jamais générée, avec une mention si aucune sage-femme ne l'a relue ; « Avez-vous compris ? » ; signes de danger signalés avec appel du centre de santé, du numéro vert ou des urgences ; question sans réponse transmise à l'équipe |
 | 2. Carnet de santé virtuel | femmes | Consultations, documents, recommandations, cycle, grossesse, post-partum, agenda, rappels, bien-être, conseil de la semaine, soutien proposé après plusieurs jours d'humeur basse, partage par QR code avec journal des partages, sauvegarde chiffrée |
 | 3. Aide et protection (VBG) | femmes | Code d'accès d'aide, **code vocal** (phrase banale dite ou écrite à l'assistant qui ouvre l'aide sans rien envoyer), SOS (appui long + compte à rebours, sans position pour les mineures), annuaire des services, journal privé, exercice de respiration, contacts de confiance, sortie rapide |
 | 4. Espace agent (ASBC) | agents de santé communautaires | Bénéficiaires (consentement obligatoire), visites et signes de danger, fiche d'aide à la décision par signe de danger, rappels de rendez-vous (SMS ou appel depuis le téléphone de l'agent ; numéro gardé sur l'appareil), orientations VBG anonymes, synchronisation hors connexion, traduction voix fr/mooré/dioula |
@@ -31,7 +31,7 @@ rapide sur chaque écran.
 Rôles : `woman` (compte anonyme lié à l'appareil, sans e-mail ni nom),
 `agent`, `validator` (sage-femme référente), `admin`.
 
-## Démarrer en local (Windows, sans Docker)
+## Démarrer en local (Windows)
 
 ```powershell
 # Une seule fois : environnement Python de l'API
@@ -62,6 +62,11 @@ l'espace agent, l'annuaire, la sauvegarde et les statistiques fonctionnent ;
 la voix et le mooré/dioula répondent `503`. Avec les modèles, le chargement
 prend 1 à 3 minutes.
 
+## Déployer
+
+Il n'y a pas d'image Docker. La démo en ligne tourne sur le runtime Python
+natif de Render (`render.yaml`, voir [`docs/DEPLOY.md`](docs/DEPLOY.md)).
+
 ## Vérifications (identiques à la CI)
 
 ```powershell
@@ -87,12 +92,14 @@ npm ci; npm run lint; npm test; npm run build
   **80 00 12 87** (source : Burkina24, 2021) et les numéros d'urgence
   **17** (police), **16** (gendarmerie), **18** (sapeurs-pompiers) (source :
   SPF Affaires étrangères belge, octobre 2026), marqués **non vérifiés**
-  (`verified_at` vide) tant que l'équipe ne les a pas appelés ; et 10 signes de
-  danger de la grossesse (OMS) **en brouillon**, à faire relire par la
-  sage-femme référente.
-- Aucune réponse de santé, aucune capsule, aucun district n'est pré-rempli :
-  ils sont saisis et **validés** dans la console. L'API ne sert que du
-  contenu validé ; toute modification le repasse en brouillon.
+  (`verified_at` vide) tant que l'équipe ne les a pas appelés.
+- Il charge aussi des réponses, des capsules et des signes de danger en
+  français, tirés de documents de l'OMS et de l'UNFPA, avec le statut `sourced` :
+  **aucune sage-femme ne les a relus**. L'API ne les sert qu'avec
+  `SERVE_SOURCED_CONTENT=true` (activé pour la démo, à laisser à `false` pour un
+  vrai pilote), et l'application les affiche comme non relus.
+- Sinon, l'API ne sert que le contenu **validé** dans la console ; toute
+  modification le repasse en brouillon. Aucun district n'est pré-rempli.
 - Le message de repli en mooré/dioula retombe sur le français tant qu'une
   traduction humaine n'est pas fournie (`ASSISTANT_FALLBACK_MESSAGES`).
 
@@ -136,5 +143,3 @@ git) et dans le cache Hugging Face.
   `frontend/lib/core/l10n/strings.dart` pour la traduction.
 - Le chemin du dossier contient des espaces et un `+` : à déplacer vers un
   chemin simple (ex. `D:\dev\laafi-ma`) si le build Android échoue.
-- Docker (`backend/infra/docker-compose.yml`) n'a pas été testé sur cette
-  machine.

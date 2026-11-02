@@ -10,9 +10,9 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app import audio_store
-from app.content import translation_of
+from app.content import is_served, translation_of
 from app.db import engine, get_db
-from app.db_models import STATUS_VALIDATED, Capsule, KbEntry
+from app.db_models import Capsule, KbEntry
 from app.fast_translation_service import fast_translation_service
 from app.languages import USER_LANGUAGES
 from app.logging_config import get_logger
@@ -48,7 +48,7 @@ def health_payload() -> dict[str, Any]:
 
 @router.get("/health")
 def health(response: Response) -> dict[str, Any]:
-    """Utilisé par Docker / le load balancer pour décider si ce service doit
+    """Utilisé par l'hébergeur (Render) pour décider si ce service doit
     recevoir du trafic. On vérifie la seule dépendance dont TOUT dépend (la
     base) et on renvoie 503 si elle est injoignable. Les modèles d'IA non
     chargés ne rendent PAS le service malsain : l'assistant texte en français,
@@ -64,16 +64,16 @@ def list_languages() -> list[dict[str, str]]:
     return [{"code": code, "name": name} for code, name in USER_LANGUAGES.items()]
 
 
-def _validated_text_for(db: Session, request: audio_store.SyntheticRequest) -> str | None:
-    """Texte VALIDÉ correspondant à une URL de synthèse, ou None. Jamais de
-    synthèse pour un brouillon : seul un contenu validé est servi."""
+def _served_text_for(db: Session, request: audio_store.SyntheticRequest) -> str | None:
+    """Texte SERVI correspondant à une URL de synthèse, ou None. Jamais de
+    synthèse pour un brouillon : seul un contenu servi au public est lu."""
     if request.kind == "kb":
         entry = db.get(KbEntry, request.object_id)
-        if entry is None or entry.status != STATUS_VALIDATED:
+        if entry is None or not is_served(entry):
             return None
         return str(translation_of(entry, request.lang).get("answer", "")) or None
     capsule = db.get(Capsule, request.object_id)
-    if capsule is None or capsule.status != STATUS_VALIDATED:
+    if capsule is None or not is_served(capsule):
         return None
     return str(translation_of(capsule, request.lang).get("text", "")) or None
 
@@ -99,17 +99,17 @@ def get_media(path: str, db: Session = Depends(get_db)) -> FileResponse:
         raise not_found
 
     # Synthèse : on revérifie À CHAQUE FOIS que l'URL correspond au texte
-    # validé ACTUEL, même si le fichier est déjà en cache — un audio périmé
+    # servi ACTUEL, même si le fichier est déjà en cache — un audio périmé
     # (texte modifié, contenu dé-validé) n'est jamais servi.
-    validated_text = _validated_text_for(db, synthetic)
-    if validated_text is None or audio_store.text_digest(validated_text) != synthetic.digest:
+    served_text = _served_text_for(db, synthetic)
+    if served_text is None or audio_store.text_digest(served_text) != synthetic.digest:
         raise not_found
     if target.is_file():
         return FileResponse(target, media_type="audio/wav")
     if not audio_store.speech_available():
         raise HTTPException(status_code=503, detail="Synthèse vocale indisponible")
     try:
-        generated = audio_store.generate_synthetic(path, validated_text, synthetic.lang)
+        generated = audio_store.generate_synthetic(path, served_text, synthetic.lang)
     except ValueError as e:
         raise HTTPException(status_code=503, detail="Synthèse vocale indisponible") from e
     return FileResponse(generated, media_type="audio/wav")

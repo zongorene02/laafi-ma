@@ -4,7 +4,8 @@
 /// langue des contenus de santé servis par l'API.
 ///
 /// Règle : des mots simples, des phrases courtes. Aucun contenu de santé ici :
-/// tous les conseils viennent de l'API, validés par une sage-femme.
+/// tous les conseils viennent de l'API, validés par une sage-femme, ou
+/// signalés par [S.provisionalNote] quand aucune sage-femme ne les a relus.
 abstract final class S {
   // --- Général ---
   static const appName = 'Laafi Ma';
@@ -121,6 +122,7 @@ abstract final class S {
   static const ask = 'Demander';
   static const youSaid = 'Vous avez dit';
   static const answer = 'Réponse';
+  static const provisionalNote = 'Source : OMS ou UNFPA. Pas encore relu par une sage-femme.';
   static const dangerTitle = 'Attention : signe de danger';
   static const callHealthCenter = 'Appeler le centre de santé';
   static const callHotline = 'Numéro vert';

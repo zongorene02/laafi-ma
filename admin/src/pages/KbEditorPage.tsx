@@ -27,7 +27,7 @@ import {
   LangTabs,
 } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
-import { LANG_LABELS, LANGS, TOPIC_LABELS } from "../lib/labels";
+import { editSendsToDraft, LANG_LABELS, LANGS, TOPIC_LABELS } from "../lib/labels";
 import { buildKbPayload, isKbTranslationFilled, missingLangs, normalizeKbTranslations } from "../lib/mappers";
 import { can } from "../lib/roles";
 import { btnDanger, btnPrimary, btnSecondary, btnSuccess, cardClass, inputClass, labelClass } from "../lib/styles";
@@ -139,9 +139,9 @@ export default function KbEditorPage() {
       return;
     }
     if (
-      entry?.status === "validated" &&
+      editSendsToDraft(entry?.status) &&
       !confirm(
-        "Cette réponse est validée. L'enregistrer la renverra en brouillon : elle ne sera plus servie à l'application tant qu'elle n'aura pas été validée à nouveau. Continuer ?",
+        `Cette réponse est ${entry?.status === "sourced" ? "sourcée, non relue" : "validée"}. L'enregistrer la renverra en brouillon : elle ne sera plus servie à l'application tant qu'elle n'aura pas été validée à nouveau. Continuer ?`,
       )
     ) {
       return;
@@ -265,6 +265,12 @@ export default function KbEditorPage() {
         <Alert kind="warning">
           <strong>Réponse validée et servie à l'application.</strong> Toute modification enregistrée la renverra en
           brouillon : elle cessera d'être servie jusqu'à une nouvelle validation.
+        </Alert>
+      )}
+      {entry?.status === "sourced" && (
+        <Alert kind="warning">
+          <strong>Réponse tirée d'une source publique, relue par aucune sage-femme.</strong> Relisez-la, puis validez-la.
+          Toute modification enregistrée la renverra en brouillon.
         </Alert>
       )}
       {entry?.status === "archived" && (

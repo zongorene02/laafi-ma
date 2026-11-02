@@ -5,12 +5,13 @@ import {
   DANGER_AGENT_QUESTION_MAX_CHARS,
   DANGER_AGENT_QUESTIONS_MAX,
   DANGER_REFER_WHEN_MAX_CHARS,
+  type ContentStatus,
   type DangerSign,
   type Lang,
 } from "../api/types";
 import { Alert, Badge, ChipsInput, EmptyState, LangTabs, Loading, PageHeader, StatusBadge, ValidationInfo } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
-import { LANG_LABELS, LANGS } from "../lib/labels";
+import { CONTENT_STATUSES, editSendsToDraft, LANG_LABELS, LANGS, STATUS_LABELS } from "../lib/labels";
 import {
   buildDangerSignPayload,
   dangerSignProblems,
@@ -37,6 +38,8 @@ export default function DangerSignsPage() {
   const canValidate = can(user?.role, "validate");
   const { data, error: loadError, isLoading, mutate } = useAsync(listDangerSigns, "danger-signs");
   const signs: DangerSign[] = data ?? [];
+  const [status, setStatus] = useState<ContentStatus | "">("");
+  const shownSigns = status ? signs.filter((s) => s.status === status) : signs;
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [editing, setEditing] = useState<DangerSign | "new" | null>(null);
@@ -101,8 +104,10 @@ export default function DangerSignsPage() {
     }
     if (
       editing !== "new" &&
-      editing?.status === "validated" &&
-      !confirm("Ce signe de danger est validé. L'enregistrer le renverra en brouillon : il ne sera plus détecté par l'application tant qu'il n'aura pas été revalidé. Continuer ?")
+      editSendsToDraft(editing?.status) &&
+      !confirm(
+        `Ce signe de danger est ${editing?.status === "sourced" ? "sourcé, non relu" : "validé"}. L'enregistrer le renverra en brouillon : il ne sera plus détecté par l'application tant qu'il n'aura pas été revalidé. Continuer ?`,
+      )
     ) {
       return;
     }
@@ -150,6 +155,16 @@ export default function DangerSignsPage() {
         }
       />
 
+      <div className="max-w-xs">
+        <label htmlFor="ds-status" className={labelClass}>Statut</label>
+        <select id="ds-status" value={status} onChange={(e) => setStatus(e.target.value as ContentStatus | "")} className={inputClass}>
+          <option value="">Tous les statuts</option>
+          {CONTENT_STATUSES.map((s) => (
+            <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+          ))}
+        </select>
+      </div>
+
       {loadError && <Alert>{loadError}</Alert>}
       {error && <Alert onClose={() => setError(null)}>{error}</Alert>}
       {notice && <Alert kind="success" onClose={() => setNotice(null)}>{notice}</Alert>}
@@ -159,9 +174,10 @@ export default function DangerSignsPage() {
           <h2 className="text-lg font-semibold text-gray-900">
             {editing === "new" ? "Nouveau signe de danger" : "Modifier le signe de danger"}
           </h2>
-          {editing !== "new" && editing.status === "validated" && (
+          {editing !== "new" && editSendsToDraft(editing.status) && (
             <Alert kind="warning">
-              Ce signe est validé. Toute modification enregistrée le renverra en brouillon jusqu'à une nouvelle validation.
+              Ce signe est {editing.status === "sourced" ? "sourcé, non relu par une sage-femme" : "validé"}. Toute
+              modification enregistrée le renverra en brouillon jusqu'à une nouvelle validation.
             </Alert>
           )}
           <LangTabs
@@ -276,13 +292,13 @@ export default function DangerSignsPage() {
 
       {isLoading ? (
         <Loading />
-      ) : signs.length === 0 && !loadError ? (
-        <EmptyState title="Aucun signe de danger saisi.">
+      ) : shownSigns.length === 0 && !loadError ? (
+        <EmptyState title={status ? "Aucun signe de danger avec ce statut." : "Aucun signe de danger saisi."}>
           Ajoutez les signes de danger à partir d'une source médicale reconnue, puis faites-les valider.
         </EmptyState>
       ) : (
         <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-          {signs.map((sign) => {
+          {shownSigns.map((sign) => {
             const fr = sign.translations.fr;
             const missing = LANGS.filter((l) => !sign.translations[l]?.label);
             return (

@@ -21,19 +21,19 @@ statistiques anonymes et administration.
 | `config.py` | Configuration (`.env`), avec garde-fous de production |
 | `auth.py` / `security.py` | JWT, rôles, hachage bcrypt, codes de récupération |
 | `db.py` / `db_models.py` / `db_types.py` | SQLAlchemy : connexion, tables, dates UTC |
-| `content.py` | Contenus de santé : sérialisation, règle "modification = brouillon" |
+| `content.py` | Contenus de santé : sérialisation, statuts servis au public, règle "modification = brouillon" |
 | `matching.py` | Rapprochement des questions (TF-IDF n-grammes, pur Python) et mots-clés de danger |
 | `audio_store.py` / `uploads.py` / `media_service.py` | Fichiers audio, envois limités en taille, décodage ffmpeg |
 | `translation_service.py` | NLLB-200 + adaptateur LoRA mooré (pivot anglais) |
 | `fast_translation_service.py` | Moteur rapide CTranslate2 int8 (option `mode: "fast"`) |
 | `speech_service.py` | Whisper (fr), MMS-ASR (mos/dyu), MMS-TTS |
-| `seed.py` | Données de départ SOURCÉES uniquement |
+| `seed.py` / `seed_content.py` | Données de départ SOURCÉES uniquement (contenu de santé OMS, UNFPA, statut `sourced`) |
 | `bootstrap_admin.py` | Création du premier admin |
 | `logging_config.py` / `request_context.py` / `tracing.py` | Logs JSON, identifiant de requête, traçage OpenTelemetry |
 
 Les poids des modèles (`models/`) ne sont pas versionnés.
 
-## Installation (Windows, sans Docker)
+## Installation (Windows)
 
 Le chemin du projet contient des espaces et un `+` : toujours le citer.
 
@@ -64,6 +64,12 @@ la voix et le mooré/dioula répondent 503.
 `bootstrap_admin` lit le mot de passe dans `ADMIN_BOOTSTRAP_PASSWORD` ou le
 demande au clavier (saisie masquée). Les comptes suivants (agents,
 validateurs, admins) se créent depuis la console d'administration.
+
+## Déploiement
+
+Pas d'image Docker : l'API tourne sur le runtime Python natif de Render
+(`render.yaml`, `requirements-lite.txt`, `entrypoint.sh`), voir
+[`docs/DEPLOY.md`](../../../docs/DEPLOY.md).
 
 ## Migrations
 

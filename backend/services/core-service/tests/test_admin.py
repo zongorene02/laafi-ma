@@ -91,8 +91,8 @@ def test_stats(client, admin_headers, woman, validator_headers):
     assert stats["women_accounts"] == 1
     assert stats["validators"] == 1
     assert stats["agents"] == 0
-    assert stats["kb"] == {"draft": 0, "validated": 0}
-    assert stats["capsules"] == {"draft": 0, "validated": 0}
+    assert stats["kb"] == {"draft": 0, "sourced": 0, "validated": 0}
+    assert stats["capsules"] == {"draft": 0, "sourced": 0, "validated": 0}
     assert stats["unanswered_open"] == 0
     assert stats["events_last_30_days"] in (0, 1)  # dépend de la date du jour
 

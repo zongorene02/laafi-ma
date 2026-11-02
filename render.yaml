@@ -21,10 +21,15 @@ services:
         value: "false"
       - key: AUTO_BOOTSTRAP
         value: "true"
+      # Sert le contenu OMS/UNFPA non relu, signalé comme tel dans l'application.
+      # Démo uniquement : à passer à "false" pour un vrai pilote tant qu'il
+      # n'est pas validé (voir docs/DEPLOY.md).
+      - key: SERVE_SOURCED_CONTENT
+        value: "true"
       - key: JWT_SECRET_KEY
         generateValue: true
       - key: CORS_ALLOWED_ORIGINS
-        value: '["https://renezongo.github.io"]'
+        value: '["https://zongorene02.github.io"]'
       # Les trois valeurs suivantes sont demandées par Render à la création.
       - key: DATABASE_URL
         sync: false

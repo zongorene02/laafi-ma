@@ -8,6 +8,7 @@ import '../../../core/utils/dates.dart';
 import '../../../shared/data/phone_actions.dart';
 import '../../../shared/widgets/laafi_scaffold.dart';
 import '../../../shared/widgets/listen_button.dart';
+import '../../../shared/widgets/provisional_note.dart';
 import '../../assistant/data/assistant_models.dart';
 import '../../help/data/help_repository.dart';
 import 'agent_gate.dart';
@@ -15,20 +16,23 @@ import 'agent_providers.dart';
 
 String decisionAidPath(String signId) => Uri(path: '/agent/decision', queryParameters: {'sign': signId}).toString();
 
-/// Texte lu par « Écouter » : la fiche telle qu'écrite par la sage-femme.
+/// Texte lu par « Écouter » : la fiche telle qu'écrite, avec la mention
+/// « pas encore relu » si aucune sage-femme ne l'a relue.
 String decisionAidSpoken(DangerSign sign) {
-  if (!sign.hasDecisionAid) return '${sign.label}. ${sign.advice}. ${S.decisionAidNotWritten}';
-  return [
-    sign.label,
-    if (sign.advice.isNotEmpty) '${S.adviceLabel} : ${sign.advice}',
-    if (sign.agentQuestions.isNotEmpty) '${S.questionsToAsk} : ${sign.agentQuestions.join('. ')}',
-    if (sign.referWhen != null) '${S.whenToRefer} : ${sign.referWhen}',
-  ].join('. ');
+  final text = !sign.hasDecisionAid
+      ? '${sign.label}. ${sign.advice}. ${S.decisionAidNotWritten}'
+      : [
+          sign.label,
+          if (sign.advice.isNotEmpty) '${S.adviceLabel} : ${sign.advice}',
+          if (sign.agentQuestions.isNotEmpty) '${S.questionsToAsk} : ${sign.agentQuestions.join('. ')}',
+          if (sign.referWhen != null) '${S.whenToRefer} : ${sign.referWhen}',
+        ].join('. ');
+  return withProvisionalNote(text, provisional: sign.provisional);
 }
 
 /// « Fiche d'aide à la décision » (module 4) : sans [signId], la liste des
 /// signes de danger en cache ; avec, la fiche du signe. Tout vient des signes
-/// VALIDÉS par la sage-femme ; rien n'est rédigé dans l'application.
+/// servis par l'API ; rien n'est rédigé dans l'application.
 class DecisionAidScreen extends ConsumerWidget {
   const DecisionAidScreen({super.key, this.signId});
 
@@ -68,6 +72,7 @@ class _SignList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (signs.any((s) => s.provisional)) ...[const ProvisionalNote(), const SizedBox(height: AppSpacing.sm)],
         for (final sign in signs)
           Card(
             child: ListTile(
@@ -103,6 +108,7 @@ class _DecisionSheet extends ConsumerWidget {
             ListenButton(text: decisionAidSpoken(sign), compact: true, mode: ListenMode.content, contentLang: 'fr'),
           ],
         ),
+        if (sign.provisional) ...[const SizedBox(height: AppSpacing.sm), ProvisionalNote(source: sign.source)],
         if (sign.advice.isNotEmpty) ...[
           const SectionTitle(S.adviceLabel, listen: false),
           Text(sign.advice, style: theme.textTheme.bodyLarge),

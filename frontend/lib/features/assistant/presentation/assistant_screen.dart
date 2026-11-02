@@ -9,6 +9,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/data/audio_playback_service.dart';
 import '../../../shared/widgets/laafi_scaffold.dart';
 import '../../../shared/widgets/listen_button.dart';
+import '../../../shared/widgets/provisional_note.dart';
 import '../../translate_voice/presentation/widgets/pulsing_mic_button.dart';
 import '../data/assistant_models.dart';
 import 'assistant_controller.dart';
@@ -220,8 +221,18 @@ class _AnswerView extends ConsumerWidget {
                   Text(entry.question, style: theme.textTheme.titleMedium),
                   const SizedBox(height: AppSpacing.sm),
                   SelectableText(entry.answer, style: theme.textTheme.bodyLarge?.copyWith(height: 1.5)),
+                  if (entry.provisional) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    ProvisionalNote(source: entry.source),
+                  ],
                   const SizedBox(height: AppSpacing.md),
-                  AudioAnswerRow(audioUrl: entry.audioUrl, audioKind: entry.audioKind, text: entry.answer, lang: lang),
+                  AudioAnswerRow(
+                    audioUrl: entry.audioUrl,
+                    audioKind: entry.audioKind,
+                    text: entry.answer,
+                    lang: lang,
+                    provisional: entry.provisional,
+                  ),
                 ],
               ),
             ),
@@ -313,7 +324,11 @@ class _UnderstoodCard extends ConsumerWidget {
                   label: const Text(S.replayAnswer),
                 )
               else
-                ListenButton(text: entry.answer, mode: ListenMode.content, contentLang: lang),
+                ListenButton(
+                  text: withProvisionalNote(entry.answer, provisional: entry.provisional),
+                  mode: ListenMode.content,
+                  contentLang: spokenLang(lang, provisional: entry.provisional),
+                ),
             ],
           ],
         ),
@@ -323,19 +338,35 @@ class _UnderstoodCard extends ConsumerWidget {
 }
 
 /// Lecture de la réponse : enregistrement servi par l'API (avec la mention
-/// « voix de synthèse » quand c'en est une), ou synthèse à la demande.
+/// « voix de synthèse » quand c'en est une), ou synthèse à la demande. Une
+/// réponse [provisional] dit aussi sa mention : dans le texte lu, ou par un
+/// bouton à part quand l'audio vient du serveur.
 class AudioAnswerRow extends ConsumerWidget {
-  const AudioAnswerRow({super.key, this.audioUrl, this.audioKind, required this.text, required this.lang});
+  const AudioAnswerRow({
+    super.key,
+    this.audioUrl,
+    this.audioKind,
+    required this.text,
+    required this.lang,
+    this.provisional = false,
+  });
 
   final String? audioUrl;
   final String? audioKind;
   final String text;
   final String lang;
+  final bool provisional;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    if (audioUrl == null) return ListenButton(text: text, mode: ListenMode.content, contentLang: lang);
+    if (audioUrl == null) {
+      return ListenButton(
+        text: withProvisionalNote(text, provisional: provisional),
+        mode: ListenMode.content,
+        contentLang: spokenLang(lang, provisional: provisional),
+      );
+    }
     return Wrap(
       spacing: AppSpacing.sm,
       runSpacing: AppSpacing.sm,
@@ -362,6 +393,8 @@ class AudioAnswerRow extends ConsumerWidget {
           label: Text(audioKind == 'synthetic' ? S.synthVoice : S.humanVoice),
           backgroundColor: audioKind == 'synthetic' ? theme.colorScheme.tertiaryContainer : null,
         ),
+        if (provisional)
+          const ListenButton(text: S.provisionalNote, compact: true, mode: ListenMode.content, contentLang: 'fr'),
       ],
     );
   }
@@ -416,7 +449,14 @@ class FaqTile extends StatelessWidget {
         children: [
           SelectableText(entry.answer, style: theme.textTheme.bodyLarge?.copyWith(height: 1.5)),
           const SizedBox(height: AppSpacing.sm),
-          AudioAnswerRow(audioUrl: entry.audioUrl, audioKind: entry.audioKind, text: entry.answer, lang: lang),
+          if (entry.provisional) ...[ProvisionalNote(source: entry.source), const SizedBox(height: AppSpacing.sm)],
+          AudioAnswerRow(
+            audioUrl: entry.audioUrl,
+            audioKind: entry.audioKind,
+            text: entry.answer,
+            lang: lang,
+            provisional: entry.provisional,
+          ),
         ],
       ),
     );

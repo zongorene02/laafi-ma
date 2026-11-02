@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Démarre l'environnement de développement local de Laafi Ma (sans Docker).
+    Démarre l'environnement de développement local de Laafi Ma.
 
 .DESCRIPTION
     Laafi Ma compte trois parties : l'API Python (core-service), la console

@@ -25,7 +25,17 @@ Staff (`agent`, `validator`, `admin`) log in with email + password. Women never 
 2. Stats events carry no user id, no device id, no IP stored, no free text.
 3. Public stats suppress any cell with a count below `PUBLIC_STATS_MIN_COUNT` (default 10).
 4. GBV referrals by agents store no name and no beneficiary id.
-5. Only `validated` health content is ever served to the app.
+5. Only `validated` health content is served to the app. Single exception: `sourced` content (see below), only when `SERVE_SOURCED_CONTENT=true`, and always flagged `provisional:true` so the app can say a midwife has not reviewed it.
+
+### Content status `sourced`
+
+Statuses for KB entries, danger signs and capsules: `draft` → `sourced` (seed only) → `validated` → `archived`.
+
+- `sourced` = taken from a cited public source (WHO, UNFPA), **not reviewed by any midwife**. Created only by `app.seed`, never through the API.
+- `SERVE_SOURCED_CONTENT` (default `false`) decides whether public endpoints serve it. It must stay `false` for any real pilot until the content is validated.
+- Every served item carries `"provisional": true|false` (`true` only for `sourced`) and `"source": str|null`: in `entry` of `ask-*`, in `GET /assistant/faq` entries, in `GET /assistant/danger-signs` and `danger_signs` hits. `GET /learn/capsules` carries `provisional` only: capsules have no source column, the source is cited in their text.
+- French fallback: a language with no text never yields nothing. `ask-*`, `GET /assistant/faq` and `GET /assistant/danger-signs` serve the French text; `GET /learn/capsules?lang=` keeps the capsule listed with its `fr` translation, and the app shows that one.
+- `POST .../validate` turns `sourced` into `validated` as for a draft, with the same `409` rule. Any edit of `sourced` content sets it back to `draft`. Status filters of staff endpoints accept `sourced`.
 
 ---
 
@@ -85,15 +95,17 @@ Both return `200`:
     "question": "Question canonique dans la langue demandée",
     "answer": "Réponse validée dans la langue demandée",
     "audio_url": "/media/kb/<file>.wav",
-    "audio_kind": "human|synthetic"
+    "audio_kind": "human|synthetic",
+    "provisional": false,
+    "source": "référence (OMS...)"
   },
   "danger": true,
-  "danger_signs": [{"id":"uuid","label":"Saignement pendant la grossesse","advice":"Allez immédiatement au centre de santé."}],
+  "danger_signs": [{"id":"uuid","label":"Saignement pendant la grossesse","advice":"Allez tout de suite au centre de santé, de jour comme de nuit, sans attendre.","provisional":false,"source":"..."}],
   "fallback_message": null
 }
 ```
 - No match above `ASSISTANT_MIN_CONFIDENCE` (default 0.55) → `matched:false`, `entry:null`, `fallback_message` = "Demandez à votre agent de santé" in the requested language; the question is recorded anonymously in `unanswered_questions` (text in fr, lang, timestamp) for validators.
-- Danger detection runs on `question_fr` (or the fr text) against validated danger-sign keywords, independently of the match.
+- Danger detection runs on `question_fr` (or the fr text) against served danger-sign keywords, independently of the match.
 - `audio_url`: a validated human recording if present; otherwise MMS-TTS synthesis cached on disk (`audio_kind:"synthetic"`). Speech model unavailable → `audio_url:null`.
 - Speech or translation model not loaded → `503 {"detail":"Assistant vocal indisponible"}` for `ask-voice`; `ask-text` in `fr` must still work without models.
 
@@ -106,11 +118,11 @@ Nothing is stored or logged (no unanswered question, no event). Used by the app 
 Models not loaded → `503 {"detail":"Assistant vocal indisponible"}`. The app falls back to `ask-voice` if this endpoint answers `404`.
 
 ### `GET /assistant/faq?lang=mos` (no auth)
-All validated entries in that language, for offline caching:
-`200 {"version":"<max updated_at>","entries":[{"id","topic","question","answer","audio_url","audio_kind","is_danger_topic":bool}]}`
+All served entries, in that language or else in French, for offline caching:
+`200 {"version":"<max updated_at>","entries":[{"id","topic","question","answer","audio_url","audio_kind","provisional":bool,"source":str|null,"is_danger_topic":bool}]}`
 
 ### `GET /assistant/danger-signs?lang=fr` (no auth)
-`200 [{"id","label","advice","keywords":[...],"agent_questions":["..."],"refer_when":str|null}]` (validated only), for on-device detection when offline and for the agent decision aid (module 4). `agent_questions` / `refer_when` come from the requested language, falling back to `fr`; empty list / `null` when the validator has not written them.
+`200 [{"id","label","advice","provisional":bool,"source":str|null,"keywords":[...],"agent_questions":["..."],"refer_when":str|null}]` (served signs only), for on-device detection when offline and for the agent decision aid (module 4). `agent_questions` / `refer_when` come from the requested language, falling back to `fr`; empty list / `null` when the validator has not written them.
 
 ### `GET /media/{path}` (no auth)
 Static audio files (`/media/kb/...`, `/media/capsules/...`).
@@ -119,7 +131,7 @@ Static audio files (`/media/kb/...`, `/media/capsules/...`).
 
 ## Knowledge base (validators and admins)
 
-Entry status: `draft` → `validated` → `archived`. Any edit of a validated entry sets it back to `draft`.
+Entry status: `draft` → `sourced` (seed only) → `validated` → `archived`. Any edit of a `sourced` or `validated` entry sets it back to `draft`.
 
 ### `GET /kb/entries?status=&topic=&q=` → `200 [KbEntry]`
 ### `POST /kb/entries` → `201 KbEntry`
@@ -132,7 +144,7 @@ Entry status: `draft` → `validated` → `archived`. Any edit of a validated en
 ```json
 KbEntry = {
   "id":"uuid","topic":"grossesse|post_partum|contraception|menstruation|nutrition|maladies|sante_mentale|violences|enfant|hygiene|autre",
-  "status":"draft|validated|archived","is_danger_topic":false,
+  "status":"draft|sourced|validated|archived","is_danger_topic":false,
   "translations":{
     "fr":{"question":"...","variants":["autre formulation", "..."],"answer":"...","audio_url":null,"audio_kind":null,"machine_translated":false},
     "mos":{...},"dyu":{...}
@@ -146,7 +158,7 @@ KbEntry = {
 ### Danger signs
 `GET /kb/danger-signs` · `POST /kb/danger-signs` · `PUT /kb/danger-signs/{id}` · `DELETE /kb/danger-signs/{id}` · `POST /kb/danger-signs/{id}/validate`
 ```json
-DangerSign = {"id":"uuid","status":"draft|validated|archived",
+DangerSign = {"id":"uuid","status":"draft|sourced|validated|archived",
   "translations":{"fr":{"label":"...","advice":"...","agent_questions":["Depuis quand ?","Combien de linges ?"],"refer_when":"..."},"mos":{...},"dyu":{...}},
   "keywords_fr":["saigne","saignement","sang"],"source":"...","validated_by":...,"validated_at":...}
 ```
@@ -221,13 +233,13 @@ Upsert, last-write-wins on `updated_at`; `deleted:true` is a soft delete.
 
 ## Learning capsules (module 5)
 
-### `GET /learn/capsules?lang=&track=` (no auth) — validated only
+### `GET /learn/capsules?lang=&track=` (no auth) — served capsules only
 ```json
 Capsule = {"id":"uuid","track":"adolescente|future_mere|jeune_mere|hommes_familles|droits|bien_etre|general",
-  "status":"draft|validated|archived","order":int,
+  "status":"draft|sourced|validated|archived","order":int,
   "translations":{"fr":{"title":"...","text":"...","audio_url":str|null,"audio_kind":"human|synthetic"|null},"mos":{...},"dyu":{...}},
   "quiz":[{"question":{"fr":"..."},"choices":[{"fr":"..."}],"correct_index":0}],
-  "license":"CC-BY-4.0","validated_by":...,"validated_at":...}
+  "license":"CC-BY-4.0","provisional":false,"validated_by":...,"validated_at":...}
 ```
 ### Admin/validator: `POST /learn/capsules` · `PUT /learn/capsules/{id}` · `DELETE /learn/capsules/{id}` · `POST /learn/capsules/{id}/validate` · `POST /learn/capsules/{id}/audio/{lang}`.
 
@@ -276,5 +288,5 @@ Any cell with `count < min_count` is removed and counted in `suppressed_cells`. 
 `GET /admin/users?role=` · `POST /admin/users` `{"email","full_name","role":"agent|validator|admin","district_id"}` → `201 {"user":User,"temporary_password":"..."}` (shown once) · `PATCH /admin/users/{id}` `{"role"?,"full_name"?,"district_id"?,"active"?}` · `POST /admin/users/{id}/reset-password` → `200 {"temporary_password":"..."}` · `DELETE /admin/users/{id}`.
 Woman accounts are never listed individually: `GET /admin/users` excludes role `woman`.
 
-`GET /admin/stats` → `{"women_accounts":int,"agents":int,"validators":int,"kb":{"draft":int,"validated":int},"capsules":{"draft":int,"validated":int},"unanswered_open":int,"events_last_30_days":int}`
+`GET /admin/stats` → `{"women_accounts":int,"agents":int,"validators":int,"kb":{"draft":int,"sourced":int,"validated":int},"capsules":{"draft":int,"sourced":int,"validated":int},"unanswered_open":int,"events_last_30_days":int}`
 `GET /admin/health` → same as `/health` plus DB and disk checks.

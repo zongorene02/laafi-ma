@@ -10,6 +10,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/data/audio_playback_service.dart';
 import '../../../shared/widgets/laafi_scaffold.dart';
 import '../../../shared/widgets/listen_button.dart';
+import '../../../shared/widgets/provisional_note.dart';
 import '../../carnet/data/records.dart';
 import '../../help/presentation/help_gate.dart';
 import '../../stats/stats_service.dart';
@@ -127,6 +128,10 @@ class _LearnHomeScreenState extends ConsumerState<LearnHomeScreen> {
                     ),
                   const SizedBox(height: AppSpacing.md),
                   if (shown.isEmpty) const InfoBanner(text: S.empty),
+                  if (shown.any((c) => c.provisional)) ...[
+                    const ProvisionalNote(),
+                    const SizedBox(height: AppSpacing.sm),
+                  ],
                   for (final capsule in shown)
                     Card(
                       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -207,6 +212,7 @@ class _CapsuleScreenState extends ConsumerState<CapsuleScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(text.title, style: theme.textTheme.headlineSmall),
+          if (capsule.provisional) ...[const SizedBox(height: AppSpacing.sm), const ProvisionalNote()],
           const SizedBox(height: AppSpacing.md),
           if (text.audioUrl != null)
             Wrap(
@@ -228,12 +234,23 @@ class _CapsuleScreenState extends ConsumerState<CapsuleScreen> {
                   avatar: Icon(text.isSynthetic ? Icons.smart_toy_rounded : Icons.person_rounded, size: 18),
                   label: Text(text.isSynthetic ? S.synthVoice : S.humanVoice),
                 ),
+                if (capsule.provisional)
+                  const ListenButton(
+                    text: S.provisionalNote,
+                    compact: true,
+                    mode: ListenMode.content,
+                    contentLang: 'fr',
+                  ),
               ],
             )
           else
             Align(
               alignment: Alignment.centerLeft,
-              child: ListenButton(text: text.text, mode: ListenMode.content, contentLang: shownLang),
+              child: ListenButton(
+                text: withProvisionalNote(text.text, provisional: capsule.provisional),
+                mode: ListenMode.content,
+                contentLang: shownLang,
+              ),
             ),
           const SizedBox(height: AppSpacing.md),
           SelectableText(text.text, style: theme.textTheme.bodyLarge?.copyWith(height: 1.6, fontSize: 18)),

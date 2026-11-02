@@ -29,7 +29,11 @@ def test_only_validated_capsules_are_public(client, validator_headers):
     assert validated["status"] == "validated"
     public = client.get("/learn/capsules", params={"lang": "fr", "track": "future_mere"}).json()
     assert [c["id"] for c in public] == [capsule["id"]]
-    assert client.get("/learn/capsules", params={"lang": "mos"}).json() == []
+    # Pas de texte mooré : la capsule reste listée, son texte français sert de repli.
+    (mos,) = client.get("/learn/capsules", params={"lang": "mos"}).json()
+    assert mos["translations"]["fr"]["text"] == "Texte de test."
+    assert mos["translations"]["mos"]["text"] == ""
+    assert mos["provisional"] is False
 
 
 def test_content_staff_can_list_drafts(client, validator_headers, admin_headers):

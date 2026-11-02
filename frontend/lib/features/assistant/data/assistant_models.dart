@@ -7,6 +7,8 @@ class AnswerEntry {
     required this.answer,
     this.audioUrl,
     this.audioKind,
+    this.provisional = false,
+    this.source,
   });
 
   factory AnswerEntry.fromJson(Map<String, dynamic> json) => AnswerEntry(
@@ -16,6 +18,8 @@ class AnswerEntry {
     answer: json['answer'] as String? ?? '',
     audioUrl: json['audio_url'] as String?,
     audioKind: json['audio_kind'] as String?,
+    provisional: json['provisional'] == true,
+    source: json['source'] as String?,
   );
 
   final String id;
@@ -27,21 +31,35 @@ class AnswerEntry {
   /// `human` ou `synthetic` : une voix de synthèse est toujours signalée.
   final String? audioKind;
 
+  /// Contenu tiré d'une source publique, relu par aucune sage-femme.
+  final bool provisional;
+  final String? source;
+
   bool get isSynthetic => audioKind == 'synthetic';
 }
 
 class DangerSignHit {
-  const DangerSignHit({required this.id, required this.label, required this.advice});
+  const DangerSignHit({
+    required this.id,
+    required this.label,
+    required this.advice,
+    this.provisional = false,
+    this.source,
+  });
 
   factory DangerSignHit.fromJson(Map<String, dynamic> json) => DangerSignHit(
     id: json['id'] as String,
     label: json['label'] as String? ?? '',
     advice: json['advice'] as String? ?? '',
+    provisional: json['provisional'] == true,
+    source: json['source'] as String?,
   );
 
   final String id;
   final String label;
   final String advice;
+  final bool provisional;
+  final String? source;
 }
 
 class AssistantAnswer {
@@ -102,6 +120,8 @@ class FaqEntry {
     this.audioUrl,
     this.audioKind,
     this.isDangerTopic = false,
+    this.provisional = false,
+    this.source,
   });
 
   factory FaqEntry.fromJson(Map<String, dynamic> json) => FaqEntry(
@@ -112,6 +132,8 @@ class FaqEntry {
     audioUrl: json['audio_url'] as String?,
     audioKind: json['audio_kind'] as String?,
     isDangerTopic: json['is_danger_topic'] == true,
+    provisional: json['provisional'] == true,
+    source: json['source'] as String?,
   );
 
   final String id;
@@ -121,6 +143,8 @@ class FaqEntry {
   final String? audioUrl;
   final String? audioKind;
   final bool isDangerTopic;
+  final bool provisional;
+  final String? source;
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -130,6 +154,8 @@ class FaqEntry {
     'audio_url': audioUrl,
     'audio_kind': audioKind,
     'is_danger_topic': isDangerTopic,
+    'provisional': provisional,
+    'source': source,
   };
 }
 
@@ -162,6 +188,8 @@ class DangerSign {
     this.keywords = const [],
     this.agentQuestions = const [],
     this.referWhen,
+    this.provisional = false,
+    this.source,
   });
 
   factory DangerSign.fromJson(Map<String, dynamic> json) => DangerSign(
@@ -174,6 +202,8 @@ class DangerSign {
         if (q.toString().trim().isNotEmpty) q.toString(),
     ],
     referWhen: _nonBlank(json['refer_when']),
+    provisional: json['provisional'] == true,
+    source: json['source'] as String?,
   );
 
   final String id;
@@ -182,6 +212,8 @@ class DangerSign {
   final List<String> keywords;
   final List<String> agentQuestions;
   final String? referWhen;
+  final bool provisional;
+  final String? source;
 
   /// La fiche d'aide à la décision a-t-elle été rédigée ?
   bool get hasDecisionAid => agentQuestions.isNotEmpty || referWhen != null;
@@ -193,9 +225,12 @@ class DangerSign {
     'keywords': keywords,
     'agent_questions': agentQuestions,
     'refer_when': referWhen,
+    'provisional': provisional,
+    'source': source,
   };
 
-  DangerSignHit toHit() => DangerSignHit(id: id, label: label, advice: advice);
+  DangerSignHit toHit() =>
+      DangerSignHit(id: id, label: label, advice: advice, provisional: provisional, source: source);
 }
 
 String? _nonBlank(Object? value) {

@@ -26,6 +26,7 @@ from app.db_models import (
     ROLE_WOMAN,
     STAFF_ROLES,
     STATUS_DRAFT,
+    STATUS_SOURCED,
     STATUS_VALIDATED,
     Capsule,
     District,
@@ -172,10 +173,12 @@ def get_stats(db: Session = Depends(get_db)) -> AdminStatsResponse:
         validators=_count(db, User.role == ROLE_VALIDATOR),
         kb=DraftValidatedCount(
             draft=_count(db, KbEntry.status == STATUS_DRAFT, model=KbEntry),
+            sourced=_count(db, KbEntry.status == STATUS_SOURCED, model=KbEntry),
             validated=_count(db, KbEntry.status == STATUS_VALIDATED, model=KbEntry),
         ),
         capsules=DraftValidatedCount(
             draft=_count(db, Capsule.status == STATUS_DRAFT, model=Capsule),
+            sourced=_count(db, Capsule.status == STATUS_SOURCED, model=Capsule),
             validated=_count(db, Capsule.status == STATUS_VALIDATED, model=Capsule),
         ),
         unanswered_open=_count(db, UnansweredQuestion.resolved.is_(False), model=UnansweredQuestion),

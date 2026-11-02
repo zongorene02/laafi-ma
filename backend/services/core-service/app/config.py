@@ -76,6 +76,11 @@ class Settings(BaseSettings):
     # qu'elles manquent, le message français est renvoyé.
     assistant_fallback_messages: dict[str, str] = {"fr": "Demandez à votre agent de santé"}
 
+    # Sert aussi le contenu `sourced` (OMS, UNFPA, relu par AUCUNE sage-femme),
+    # toujours signalé `provisional: true`. Pour la démo uniquement : à garder
+    # à False pour un vrai pilote tant que ce contenu n'est pas validé.
+    serve_sourced_content: bool = False
+
     # Taille maximale d'un fichier audio envoyé (question vocale,
     # enregistrement humain d'une réponse...).
     max_audio_upload_bytes: int = 10 * 1024 * 1024  # 10 Mo
@@ -96,16 +101,16 @@ class Settings(BaseSettings):
     public_stats_min_count: int = 10
 
     # --- Traçage distribué ---
-    # Désactivé par défaut. À activer dans les environnements où Jaeger tourne
-    # (voir infra/docker-compose.yml, profil "monitoring").
+    # Désactivé par défaut. À activer seulement si un collecteur OpenTelemetry
+    # (Jaeger...) écoute à l'adresse ci-dessous.
     tracing_enabled: bool = False
     otel_exporter_endpoint: str = "http://localhost:4317"
     service_name: str = "laafi-ma-core"
 
     # --- Base de données ---
     # SQLite par défaut : zéro serveur à lancer, parfait pour le
-    # développement local. En production/Docker : une URL PostgreSQL (voir
-    # infra/docker-compose.yml) — le code SQLAlchemy ne change pas.
+    # développement local. En production : une URL PostgreSQL (voir
+    # docs/DEPLOY.md) — le code SQLAlchemy ne change pas.
     database_url: str = "sqlite:///./dev.db"
 
     @model_validator(mode="after")

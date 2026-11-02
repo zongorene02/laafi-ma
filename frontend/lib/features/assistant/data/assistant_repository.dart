@@ -114,6 +114,9 @@ class AssistantRepository {
           keywords: sign.keywords,
           agentQuestions: localized[sign.id]?.agentQuestions ?? sign.agentQuestions,
           referWhen: localized[sign.id]?.referWhen ?? sign.referWhen,
+          // Dans le doute (caches d'âges différents), le signe reste signalé.
+          provisional: sign.provisional || (localized[sign.id]?.provisional ?? false),
+          source: localized[sign.id]?.source ?? sign.source,
         ),
     ];
   }

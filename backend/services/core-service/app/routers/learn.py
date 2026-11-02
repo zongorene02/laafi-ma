@@ -1,8 +1,10 @@
 """
 Capsules d'apprentissage (module 5).
 
-Lecture publique : capsules VALIDÉES uniquement. Le personnel de contenu
-(validateurs, admins) peut aussi lister les brouillons et archives avec
+Lecture publique : capsules VALIDÉES uniquement, plus les capsules `sourced`
+si SERVE_SOURCED_CONTENT=true (voir `served_statuses` dans app/content.py). Le
+personnel de contenu (validateurs, admins) peut aussi lister les brouillons et
+archives avec
 `?include_drafts=true` (tous statuts) ou `?status=` (un statut précis) —
 c'est ainsi que la console d'administration les retrouve. Pour tout autre
 appelant, ces paramètres sont ignorés.
@@ -18,7 +20,7 @@ from sqlalchemy.orm import Session
 
 from app import audio_store, uploads
 from app.auth import get_optional_current_user, require_roles
-from app.content import LANGS, capsule_has_text, capsule_out, mark_edited, translation_of
+from app.content import LANGS, capsule_has_text, capsule_out, is_served, mark_edited, served_statuses, translation_of
 from app.db import get_db
 from app.db_models import ROLE_ADMIN, ROLE_VALIDATOR, STATUS_ARCHIVED, STATUS_DRAFT, STATUS_VALIDATED, Capsule, User
 from app.db_types import utc_now
@@ -58,7 +60,7 @@ def list_capsules(
     current_user: User | None = Depends(get_optional_current_user),
 ) -> list[CapsuleOut]:
     is_content_staff = current_user is not None and current_user.role in CONTENT_STAFF
-    # Le public ne voit QUE le validé, quels que soient les paramètres.
+    # Le public ne voit QUE le contenu servi, quels que soient les paramètres.
     if not is_content_staff:
         status, include_drafts = None, False
 
@@ -66,14 +68,16 @@ def list_capsules(
     if status is not None:
         query = query.where(Capsule.status == status)
     elif not include_drafts:
-        query = query.where(Capsule.status == STATUS_VALIDATED)
+        query = query.where(Capsule.status.in_(served_statuses()))
     if track is not None:
         query = query.where(Capsule.track == track)
     capsules = list(db.scalars(query))
     if lang is not None:
-        capsules = [c for c in capsules if capsule_has_text(c, lang)]
-    # Vue "servie" (synthèse vocale) seulement pour le contenu validé.
-    return [capsule_out(c, served=c.status == STATUS_VALIDATED) for c in capsules]
+        # Une capsule sans texte dans cette langue reste listée si elle a son
+        # texte français : l'app l'affiche alors en français, jamais vide.
+        capsules = [c for c in capsules if capsule_has_text(c, lang) or capsule_has_text(c, "fr")]
+    # Vue "servie" (synthèse vocale) seulement pour le contenu servi au public.
+    return [capsule_out(c, served=is_served(c)) for c in capsules]
 
 
 @router.post("/capsules", response_model=CapsuleOut, status_code=201, dependencies=[Depends(require_content_staff)])

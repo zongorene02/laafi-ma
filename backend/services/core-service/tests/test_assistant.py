@@ -75,7 +75,13 @@ def test_danger_detection_uses_validated_signs_only_and_is_independent_of_the_ma
     assert body["matched"] is False  # aucune entrée de la base ne correspond...
     assert body["danger"] is True  # ...mais le danger est quand même signalé
     assert body["danger_signs"] == [
-        {"id": sign["id"], "label": "Saignement pendant la grossesse", "advice": "Allez au centre de santé."}
+        {
+            "id": sign["id"],
+            "label": "Saignement pendant la grossesse",
+            "advice": "Allez au centre de santé.",
+            "provisional": False,
+            "source": "Source de test",
+        }
     ]
 
 
@@ -208,7 +214,7 @@ def test_transcribe_is_rate_limited(client, models_loaded):
 # --- FAQ et signes de danger (hors ligne) -------------------------------------
 
 
-def test_faq_lists_validated_entries_having_text_in_that_language(client, validator_headers):
+def test_faq_lists_validated_entries_with_french_as_fallback(client, validator_headers):
     validated = validated_kb_entry(client, validator_headers)
     create_kb_entry(client, validator_headers)  # brouillon : absent
 
@@ -219,7 +225,9 @@ def test_faq_lists_validated_entries_having_text_in_that_language(client, valida
     assert [e["id"] for e in fr["entries"]] == [validated["id"]]
     assert fr["entries"][0]["is_danger_topic"] is False
     assert mos["entries"][0]["answer"] == "Réponse de test (mos)"
-    assert dyu["entries"] == []  # pas de texte dioula validé
+    # Pas de texte dioula : le français validé, jamais une liste vide.
+    assert dyu["entries"][0]["answer"] == "Réponse de test validée (fr)."
+    assert dyu["entries"][0]["question"] == "Que dois-je manger pendant la grossesse ?"
     assert fr["version"].endswith("Z")
 
 
@@ -242,6 +250,8 @@ def test_public_danger_signs_are_validated_only_with_keywords(client, validator_
             "id": sign["id"],
             "label": "Saignement pendant la grossesse",
             "advice": "Allez au centre de santé.",
+            "provisional": False,
+            "source": "Source de test",
             "keywords": ["saigne", "saignement", "sang"],
             "agent_questions": [],
             "refer_when": None,
@@ -272,6 +282,20 @@ def test_public_danger_signs_serve_the_agent_aid_with_french_fallback(client, va
     (dyu,) = client.get("/assistant/danger-signs", params={"lang": "dyu"}).json()
     assert dyu["agent_questions"] == ["Depuis quand ?", "Combien de linges ?"]
     assert dyu["label"] == "Saignement"
+
+
+def test_danger_sign_falls_back_to_french_field_by_field(client, validator_headers):
+    payload = {
+        "translations": {
+            "fr": {"label": "Saignement", "advice": "Allez au centre de santé."},
+            "mos": {"label": "Libellé (mos)", "advice": ""},
+        },
+        "keywords_fr": ["saigne"],
+    }
+    sign = client.post("/kb/danger-signs", json=payload, headers=validator_headers).json()
+    client.post(f"/kb/danger-signs/{sign['id']}/validate", headers=validator_headers)
+    (mos,) = client.get("/assistant/danger-signs", params={"lang": "mos"}).json()
+    assert (mos["label"], mos["advice"]) == ("Libellé (mos)", "Allez au centre de santé.")
 
 
 def test_human_recording_is_preferred_to_synthesis(client, validator_headers, models_loaded):

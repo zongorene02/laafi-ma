@@ -2,17 +2,19 @@
 Contenus de santé : conversion ORM -> réponses de l'API et règles du circuit
 de validation, partagées par les routeurs kb, assistant et learn.
 
-Circuit de validation (docs/API.md) : `draft` -> `validated` -> `archived`.
-TOUTE modification d'un contenu le renvoie en `draft` (et efface qui l'a
-validé) : une réponse de santé modifiée n'est plus celle qu'une sage-femme a
-relue, elle doit donc être relue à nouveau avant d'être servie.
+Circuit de validation (docs/API.md) : `draft` -> `sourced` (seed seulement) ->
+`validated` -> `archived`. TOUTE modification d'un contenu le renvoie en
+`draft` (et efface qui l'a validé) : une réponse de santé modifiée n'est plus
+celle qu'une sage-femme a relue, ni celle de la source citée, elle doit donc
+être relue à nouveau avant d'être servie.
 """
 
 from datetime import datetime
 from typing import Any
 
 from app.audio_store import audio_for, media_url
-from app.db_models import STATUS_DRAFT, Capsule, DangerSign, KbEntry, User
+from app.config import settings
+from app.db_models import STATUS_DRAFT, STATUS_SOURCED, STATUS_VALIDATED, Capsule, DangerSign, KbEntry, User
 from app.db_types import utc_now
 from app.languages import USER_LANGUAGES
 from app.schemas.common import UserRef
@@ -29,6 +31,24 @@ LANGS: tuple[str, ...] = tuple(USER_LANGUAGES)
 
 def user_ref(user: User | None) -> UserRef | None:
     return UserRef(id=user.id, full_name=user.full_name) if user is not None else None
+
+
+def served_statuses() -> tuple[str, ...]:
+    """Statuts servis au public : la SEULE définition de cette règle, utilisée
+    par l'assistant, la FAQ, les signes de danger, les capsules et la synthèse
+    vocale. `sourced` n'en fait partie que si SERVE_SOURCED_CONTENT=true."""
+    if settings.serve_sourced_content:
+        return (STATUS_VALIDATED, STATUS_SOURCED)
+    return (STATUS_VALIDATED,)
+
+
+def is_served(item: KbEntry | DangerSign | Capsule) -> bool:
+    return item.status in served_statuses()
+
+
+def is_provisional(item: KbEntry | DangerSign | Capsule) -> bool:
+    """Contenu servi sans relecture par une sage-femme : l'app doit le dire."""
+    return item.status == STATUS_SOURCED
 
 
 def mark_edited(item: KbEntry | DangerSign | Capsule, now: datetime | None = None) -> None:
@@ -54,9 +74,9 @@ def kb_has_text(entry: KbEntry, lang: str) -> bool:
 
 
 def kb_serving_lang(entry: KbEntry, lang: str) -> str:
-    """Langue réellement servie : celle demandée si l'entrée validée a un
+    """Langue réellement servie : celle demandée si l'entrée servie a un
     texte dans cette langue, sinon le français (toujours présent sur une
-    entrée validée). On ne sert JAMAIS une traduction automatique à la volée,
+    entrée servie). On ne sert JAMAIS une traduction automatique à la volée,
     qui n'aurait été relue par personne."""
     return lang if kb_has_text(entry, lang) else "fr"
 
@@ -64,7 +84,7 @@ def kb_serving_lang(entry: KbEntry, lang: str) -> str:
 def kb_entry_out(entry: KbEntry) -> KbEntryOut:
     """Vue complète pour la console (validateurs/admins). L'audio indiqué est
     l'enregistrement HUMAIN s'il existe ; la synthèse n'est produite que pour
-    les contenus validés (voir audio_store et routers/meta.py)."""
+    les contenus servis (voir audio_store et routers/meta.py)."""
     translations: dict[str, KbTranslationOut] = {}
     for lang in LANGS:
         t = translation_of(entry, lang)
@@ -144,11 +164,14 @@ def danger_sign_out(sign: DangerSign) -> DangerSignOut:
 
 
 def danger_sign_text(sign: DangerSign, lang: str) -> tuple[str, str]:
-    """(libellé, conseil) dans la langue demandée, sinon en français."""
-    t = translation_of(sign, lang)
-    if not str(t.get("label", "")).strip():
-        t = translation_of(sign, "fr")
-    return str(t.get("label", "")), str(t.get("advice", ""))
+    """(libellé, conseil) dans la langue demandée, sinon en français —
+    champ par champ, comme `danger_sign_aid` : un libellé mooré sans conseil
+    garde le conseil français plutôt que rien."""
+    asked = translation_of(sign, lang)
+    fr = translation_of(sign, "fr")
+    label = str(asked.get("label", "")).strip() or str(fr.get("label", ""))
+    advice = str(asked.get("advice", "")).strip() or str(fr.get("advice", ""))
+    return label, advice
 
 
 def danger_sign_aid(sign: DangerSign, lang: str) -> tuple[list[str], str | None]:
@@ -172,7 +195,7 @@ def capsule_has_text(capsule: Capsule, lang: str) -> bool:
 
 
 def capsule_out(capsule: Capsule, *, served: bool) -> CapsuleOut:
-    """`served=True` : vue publique d'une capsule validée — l'audio d'une
+    """`served=True` : vue publique d'une capsule servie — l'audio d'une
     langue sans enregistrement humain pointe vers la synthèse (générée à la
     première lecture). `served=False` : vue console, enregistrement humain
     uniquement."""
@@ -199,6 +222,7 @@ def capsule_out(capsule: Capsule, *, served: bool) -> CapsuleOut:
         translations=translations,
         quiz=[QuizQuestion.model_validate(q) for q in capsule.quiz or []],
         license=capsule.license,
+        provisional=is_provisional(capsule),
         validated_by=user_ref(capsule.validated_by),
         validated_at=capsule.validated_at,
         created_at=capsule.created_at,

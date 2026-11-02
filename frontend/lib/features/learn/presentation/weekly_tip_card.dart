@@ -6,6 +6,7 @@ import '../../../core/l10n/strings.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/listen_button.dart';
+import '../../../shared/widgets/provisional_note.dart';
 import '../data/learn_repository.dart';
 import '../domain/weekly_tip.dart';
 
@@ -16,7 +17,7 @@ final weeklyTipProvider = FutureProvider.autoDispose<Capsule?>((ref) async {
   return cached == null ? null : weeklyTip(cached.$1, DateTime.now());
 });
 
-/// « Conseil de la semaine » : une capsule validée ; toucher l'ouvre.
+/// « Conseil de la semaine » : une capsule servie par l'API ; toucher l'ouvre.
 class WeeklyTipCard extends ConsumerWidget {
   const WeeklyTipCard({super.key});
 
@@ -37,9 +38,16 @@ class WeeklyTipCard extends ConsumerWidget {
           child: const Icon(Icons.tips_and_updates_rounded, color: AppTheme.leaf),
         ),
         title: Text(S.weeklyTip, style: theme.textTheme.titleSmall),
-        subtitle: Text(title, style: theme.textTheme.titleMedium),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(title, style: theme.textTheme.titleMedium),
+            if (capsule.provisional) const ProvisionalNote(),
+          ],
+        ),
         trailing: ListenButton(
-          text: title,
+          text: withProvisionalNote(title, provisional: capsule.provisional),
           compact: true,
           mode: ListenMode.content,
           contentLang: capsule.langShown(lang),

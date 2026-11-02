@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../shared/data/phone_actions.dart';
 import '../../../shared/widgets/laafi_scaffold.dart';
 import '../../../shared/widgets/listen_button.dart';
+import '../../../shared/widgets/provisional_note.dart';
 import '../../help/data/help_repository.dart';
 import '../../stats/stats_service.dart';
 import '../data/assistant_models.dart';
@@ -42,7 +43,11 @@ class DangerBanner extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final spoken = [S.dangerTitle, for (final s in signs) '${s.label}. ${s.advice}'].join('. ');
+    final provisional = signs.any((s) => s.provisional);
+    final spoken = withProvisionalNote(
+      [S.dangerTitle, for (final s in signs) '${s.label}. ${s.advice}'].join('. '),
+      provisional: provisional,
+    );
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -60,7 +65,12 @@ class DangerBanner extends ConsumerWidget {
               Expanded(
                 child: Text(S.dangerTitle, style: theme.textTheme.titleLarge?.copyWith(color: AppTheme.danger)),
               ),
-              ListenButton(text: spoken, compact: true, mode: ListenMode.content, contentLang: contentLang),
+              ListenButton(
+                text: spoken,
+                compact: true,
+                mode: ListenMode.content,
+                contentLang: spokenLang(contentLang, provisional: provisional),
+              ),
             ],
           ),
           for (final sign in signs) ...[
@@ -88,6 +98,8 @@ class DangerBanner extends ConsumerWidget {
             icon: const Icon(Icons.phone_in_talk_rounded, size: 28),
             label: const Text(S.callHotline),
           ),
+          // Sous les boutons d'appel : la mention ne les repousse jamais.
+          if (provisional) ...[const SizedBox(height: AppSpacing.sm), const ProvisionalNote()],
         ],
       ),
     );

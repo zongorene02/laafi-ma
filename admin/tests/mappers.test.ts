@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { PublicStats, QuizQuestion } from "../src/api/types.ts";
 import { describeHttpError } from "../src/lib/errors.ts";
+import { CONTENT_STATUSES, editSendsToDraft, STATUS_LABELS } from "../src/lib/labels.ts";
 import {
   buildCapsulePayload,
   buildDangerSignPayload,
@@ -246,6 +247,21 @@ describe("statistiques publiques", () => {
     assert.deepEqual(presetRange("default"), {});
     assert.equal(isValidRange("2026-10-01", "2026-09-01"), false);
     assert.equal(formatIsoWeek("2026-W04"), "sem. 4 (2026)");
+  });
+});
+
+describe("statuts de contenu", () => {
+  it("le statut sourcé a son libellé et son filtre", () => {
+    assert.equal(STATUS_LABELS.sourced, "Sourcé, non relu");
+    assert.deepEqual(CONTENT_STATUSES, ["draft", "sourced", "validated", "archived"]);
+  });
+
+  it("modifier un contenu sourcé ou validé le renvoie en brouillon", () => {
+    assert.equal(editSendsToDraft("sourced"), true);
+    assert.equal(editSendsToDraft("validated"), true);
+    assert.equal(editSendsToDraft("draft"), false);
+    assert.equal(editSendsToDraft("archived"), false);
+    assert.equal(editSendsToDraft(undefined), false);
   });
 });
 

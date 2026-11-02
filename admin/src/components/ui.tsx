@@ -59,7 +59,8 @@ export function Badge({ tone = "gray", children, title }: { tone?: BadgeTone; ch
 type BadgeTone = "gray" | "green" | "amber" | "red" | "blue" | "brand" | "violet";
 
 export function StatusBadge({ status }: { status: ContentStatus }) {
-  const tone: BadgeTone = status === "validated" ? "green" : status === "draft" ? "amber" : "gray";
+  const tones: Record<ContentStatus, BadgeTone> = { draft: "amber", sourced: "violet", validated: "green", archived: "gray" };
+  const tone = tones[status] ?? "gray";
   return <Badge tone={tone}>{STATUS_LABELS[status] ?? status}</Badge>;
 }
 

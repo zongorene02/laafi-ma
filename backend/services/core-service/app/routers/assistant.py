@@ -5,17 +5,23 @@ signes de danger.
 Pipeline d'une question :
 
     voix (mos/dyu/fr) --STT--> texte --traduction--> français
-        --rapprochement--> entrée VALIDÉE --> réponse dans la langue demandée
-        +--détection--> signes de danger VALIDÉS (indépendamment du rapprochement)
+        --rapprochement--> entrée SERVIE --> réponse dans la langue demandée
+        +--détection--> signes de danger SERVIS (indépendamment du rapprochement)
 
 Rien n'est jamais généré : la réponse servie est TOUJOURS un texte relu par
 une sage-femme ou un médecin (règle de confidentialité n°5, voir
-docs/API.md). Une question sans réponse validée assez proche est enregistrée
-anonymement pour que les validateurs enrichissent la base.
+docs/API.md), ou, si SERVE_SOURCED_CONTENT=true, un texte tiré d'une source
+citée et signalé `provisional: true`. Une question sans réponse servie assez
+proche est enregistrée anonymement pour que les validateurs enrichissent la
+base.
+
+Un texte qui manque dans la langue demandée est remplacé par le français.
 
 `ask-text` en français ne dépend d'aucun modèle d'IA : il fonctionne même sur
 un serveur démarré sans modèles (LOAD_MODELS_ON_STARTUP=false).
 """
+
+from collections.abc import Iterable
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from sqlalchemy import func, select
@@ -23,9 +29,18 @@ from sqlalchemy.orm import Session
 
 from app import uploads
 from app.config import settings
-from app.content import danger_sign_aid, danger_sign_text, kb_has_text, kb_served_audio, kb_serving_lang, translation_of
+from app.content import (
+    danger_sign_aid,
+    danger_sign_text,
+    is_provisional,
+    kb_has_text,
+    kb_served_audio,
+    kb_serving_lang,
+    served_statuses,
+    translation_of,
+)
 from app.db import get_db
-from app.db_models import STATUS_VALIDATED, DangerSign, KbEntry, UnansweredQuestion
+from app.db_models import DangerSign, KbEntry, UnansweredQuestion
 from app.languages import UserLang
 from app.limiter import limiter
 from app.logging_config import get_logger
@@ -56,12 +71,12 @@ def _fallback_message(lang: str) -> str:
     return messages.get(lang) or messages.get("fr") or ""
 
 
-def _validated_entries(db: Session) -> list[KbEntry]:
-    return list(db.scalars(select(KbEntry).where(KbEntry.status == STATUS_VALIDATED)))
+def _served_entries(db: Session) -> list[KbEntry]:
+    return list(db.scalars(select(KbEntry).where(KbEntry.status.in_(served_statuses()))))
 
 
-def _validated_danger_signs(db: Session) -> list[DangerSign]:
-    return list(db.scalars(select(DangerSign).where(DangerSign.status == STATUS_VALIDATED)))
+def _served_danger_signs(db: Session) -> list[DangerSign]:
+    return list(db.scalars(select(DangerSign).where(DangerSign.status.in_(served_statuses()))))
 
 
 def _to_french(text: str, lang: str) -> str:
@@ -81,24 +96,32 @@ def detect_danger_signs(text_fr: str, signs: list[DangerSign], lang: str) -> lis
     for sign in signs:
         if contains_keyword(normalized, sign.keywords_fr or []):
             label, advice = danger_sign_text(sign, lang)
-            found.append(DangerSignBrief(id=sign.id, label=label, advice=advice))
+            found.append(
+                DangerSignBrief(
+                    id=sign.id, label=label, advice=advice, provisional=is_provisional(sign), source=sign.source
+                )
+            )
     return found
+
+
+def kb_candidates(entries: Iterable[KbEntry]) -> list[Candidate]:
+    """Formulations françaises (question + variantes) comparées à la question."""
+    candidates: list[Candidate] = []
+    for entry in entries:
+        fr = translation_of(entry, "fr")
+        for phrasing in [fr.get("question", ""), *fr.get("variants", [])]:
+            if str(phrasing).strip():
+                candidates.append(Candidate(entry_id=entry.id, text=str(phrasing)))
+    return candidates
 
 
 def answer_question(db: Session, *, text_fr: str, lang: str, transcript: str | None) -> AskResponse:
     """Cœur de l'assistant, commun aux questions écrites et vocales."""
     question_fr = None if lang == "fr" else text_fr
-    danger_signs = detect_danger_signs(text_fr, _validated_danger_signs(db), lang)
+    danger_signs = detect_danger_signs(text_fr, _served_danger_signs(db), lang)
 
-    entries = {entry.id: entry for entry in _validated_entries(db)}
-    candidates: list[Candidate] = []
-    for entry in entries.values():
-        fr = translation_of(entry, "fr")
-        for phrasing in [fr.get("question", ""), *fr.get("variants", [])]:
-            if str(phrasing).strip():
-                candidates.append(Candidate(entry_id=entry.id, text=str(phrasing)))
-
-    match = best_match(text_fr, candidates) if text_fr.strip() else None
+    entries = {entry.id: entry for entry in _served_entries(db)}
+    match = best_match(text_fr, kb_candidates(entries.values())) if text_fr.strip() else None
     confidence = match.confidence if match is not None else 0.0
 
     if match is not None and confidence >= settings.assistant_min_confidence:
@@ -118,13 +141,15 @@ def answer_question(db: Session, *, text_fr: str, lang: str, transcript: str | N
                 answer=str(served.get("answer", "")),
                 audio_url=audio_url,
                 audio_kind=audio_kind,  # type: ignore[arg-type]
+                provisional=is_provisional(entry),
+                source=entry.source,
             ),
             danger=bool(danger_signs),
             danger_signs=danger_signs,
             fallback_message=None,
         )
 
-    # Pas de réponse validée assez proche : on garde la question (en
+    # Pas de réponse servie assez proche : on garde la question (en
     # français, sans aucun identifiant) pour les validateurs.
     if text_fr.strip():
         db.add(UnansweredQuestion(text_fr=text_fr.strip()[:1000], lang=lang))
@@ -196,18 +221,20 @@ def transcribe(request: Request, audio: UploadFile = File(...), lang: UserLang =
 
 @router.get("/faq", response_model=FaqResponse)
 def faq(lang: UserLang = "fr", db: Session = Depends(get_db)) -> FaqResponse:
-    """Toutes les entrées validées qui ont un texte dans la langue demandée,
-    pour la mise en cache hors ligne dans l'app.
+    """Toutes les entrées servies, dans la langue demandée ou en français si
+    ce texte manque (comme `ask-*`), pour la mise en cache hors ligne dans
+    l'app.
 
     `version` = date de dernière modification de la base (tous statuts
     confondus : un archivage doit aussi invalider le cache de l'app)."""
     latest = db.scalar(select(func.max(KbEntry.updated_at)))
     entries: list[FaqEntry] = []
-    for entry in sorted(_validated_entries(db), key=lambda e: (e.topic, e.created_at)):
-        if not kb_has_text(entry, lang):
+    for entry in sorted(_served_entries(db), key=lambda e: (e.topic, e.created_at)):
+        served_lang = kb_serving_lang(entry, lang)
+        if not kb_has_text(entry, served_lang):
             continue
-        t = translation_of(entry, lang)
-        audio_url, audio_kind = kb_served_audio(entry, lang)
+        t = translation_of(entry, served_lang)
+        audio_url, audio_kind = kb_served_audio(entry, served_lang)
         entries.append(
             FaqEntry(
                 id=entry.id,
@@ -216,6 +243,8 @@ def faq(lang: UserLang = "fr", db: Session = Depends(get_db)) -> FaqResponse:
                 answer=str(t.get("answer", "")),
                 audio_url=audio_url,
                 audio_kind=audio_kind,  # type: ignore[arg-type]
+                provisional=is_provisional(entry),
+                source=entry.source,
                 is_danger_topic=entry.is_danger_topic,
             )
         )
@@ -224,11 +253,11 @@ def faq(lang: UserLang = "fr", db: Session = Depends(get_db)) -> FaqResponse:
 
 @router.get("/danger-signs", response_model=list[DangerSignPublic])
 def public_danger_signs(lang: UserLang = "fr", db: Session = Depends(get_db)) -> list[DangerSignPublic]:
-    """Signes de danger VALIDÉS, avec leurs mots-clés (français), pour la
+    """Signes de danger SERVIS, avec leurs mots-clés (français), pour la
     détection sur l'appareil quand il est hors ligne, et la fiche d'aide à
     la décision de l'agent (questions à poser, quand orienter)."""
     result = []
-    for sign in _validated_danger_signs(db):
+    for sign in _served_danger_signs(db):
         label, advice = danger_sign_text(sign, lang)
         agent_questions, refer_when = danger_sign_aid(sign, lang)
         result.append(
@@ -236,6 +265,8 @@ def public_danger_signs(lang: UserLang = "fr", db: Session = Depends(get_db)) ->
                 id=sign.id,
                 label=label,
                 advice=advice,
+                provisional=is_provisional(sign),
+                source=sign.source,
                 keywords=list(sign.keywords_fr or []),
                 agent_questions=agent_questions,
                 refer_when=refer_when,

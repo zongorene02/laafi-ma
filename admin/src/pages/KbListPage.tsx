@@ -3,12 +3,11 @@ import { Link } from "react-router-dom";
 import { listKbEntries, type KbFilters } from "../api/kb";
 import { KB_TOPICS, type ContentStatus, type KbEntry, type KbTopic } from "../api/types";
 import { Alert, Badge, EmptyState, Loading, PageHeader, StatusBadge } from "../components/ui";
-import { formatDate, LANGS, STATUS_LABELS, TOPIC_LABELS } from "../lib/labels";
+import { CONTENT_STATUSES, formatDate, LANGS, STATUS_LABELS, TOPIC_LABELS } from "../lib/labels";
 import { missingLangs } from "../lib/mappers";
 import { useAsync } from "../lib/useAsync";
 import { btnPrimary, btnSecondary, inputClass, labelClass } from "../lib/styles";
 
-const STATUSES: ContentStatus[] = ["draft", "validated", "archived"];
 
 export default function KbListPage() {
   const [status, setStatus] = useState<ContentStatus | "">("");
@@ -49,7 +48,7 @@ export default function KbListPage() {
           <label htmlFor="kb-status" className={labelClass}>Statut</label>
           <select id="kb-status" value={status} onChange={(e) => setStatus(e.target.value as ContentStatus | "")} className={inputClass}>
             <option value="">Tous</option>
-            {STATUSES.map((s) => (
+            {CONTENT_STATUSES.map((s) => (
               <option key={s} value={s}>{STATUS_LABELS[s]}</option>
             ))}
           </select>

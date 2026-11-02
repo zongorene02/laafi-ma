@@ -9,7 +9,7 @@ French version: [README.fr.md](README.fr.md).
 
 | Module | For | What it does |
 |---|---|---|
-| 1. Voice health assistant | Women | Spoken or typed question, confirmed before answering; answers come **only** from a base validated by a midwife; danger signs route her to a health centre, the hotline or emergency services |
+| 1. Voice health assistant | Women | Spoken or typed question, confirmed before answering; answers come **only** from a fixed base, never generated, and any answer no midwife has reviewed says so; danger signs route her to a health centre, the hotline or emergency services |
 | 2. Virtual health record | Women | Profile, cycle, contraception, pregnancy, postpartum, children and vaccines, consultations, documents, medicines, agenda, reminders, wellbeing, time-limited QR sharing, encrypted backup |
 | 3. Help and protection (GBV) | Women | Separate help code, secret spoken phrase, discreet alert to trusted contacts, service directory, encrypted private journal, breathing exercise, quick exit |
 | 4. Health worker space | Community health workers | Consented beneficiaries, visits, decision aid per danger sign, appointment reminders, anonymous GBV referrals, offline sync, voice translation |
@@ -28,7 +28,7 @@ profiles on a shared phone, auto-lock.
 - [`docs/architecture.md`](docs/architecture.md): flows, AI models, deployment.
 - [`docs/DEPLOY.md`](docs/DEPLOY.md): free online demo (GitHub Pages, Render, Neon).
 
-## Install and run locally (Windows, no Docker)
+## Install and run locally (Windows)
 
 ```powershell
 cd backend\services\core-service
@@ -49,6 +49,11 @@ API: http://127.0.0.1:8000 (docs at `/docs`). Console: http://localhost:5173.
 App (web): http://localhost:5000. The AI models need about 6 GB of RAM. Without
 them, voice and Mooré/Dioula return `503`; everything else works.
 
+## Deploy
+
+There is no Docker image. The online demo runs on Render's native Python
+runtime (`render.yaml`, see [`docs/DEPLOY.md`](docs/DEPLOY.md)).
+
 ## Tests
 
 ```powershell
@@ -62,8 +67,12 @@ npm ci; npm run lint; npm test; npm run build
 
 ## Data and content
 
-- Health answers and lessons are not invented: they are entered and **validated
-  by a midwife** in the console. The API serves validated content only.
+- Health answers, lessons and danger signs are not invented. The seed loads
+  French content taken from WHO and UNFPA documents, with the status `sourced`:
+  **no midwife has reviewed it**. The API serves it only with
+  `SERVE_SOURCED_CONTENT=true` (on for the demo, must stay off for a real pilot),
+  and the app shows it as not reviewed.
+- Otherwise the API serves only content **validated by a midwife** in the console.
 - The hotline and emergency numbers are seeded as **not verified** until the
   team has confirmed them.
 - The health record stays on the phone, encrypted. The optional backup is

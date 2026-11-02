@@ -83,6 +83,7 @@ class TemporaryPasswordResponse(BaseModel):
 
 class DraftValidatedCount(BaseModel):
     draft: int
+    sourced: int
     validated: int
 
 

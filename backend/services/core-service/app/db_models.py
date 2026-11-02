@@ -38,6 +38,10 @@ ROLE_ADMIN = "admin"
 STAFF_ROLES = (ROLE_AGENT, ROLE_VALIDATOR, ROLE_ADMIN)
 
 STATUS_DRAFT = "draft"
+# Tiré d'une source publique citée (OMS, UNFPA), relu par AUCUNE sage-femme :
+# créé seulement par `python -m app.seed`, servi seulement si
+# SERVE_SOURCED_CONTENT=true (voir docs/API.md et app/content.py).
+STATUS_SOURCED = "sourced"
 STATUS_VALIDATED = "validated"
 STATUS_ARCHIVED = "archived"
 
@@ -107,6 +111,8 @@ class KbEntry(Base):
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     validated_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
+    # Identifiant stable des lignes créées par `python -m app.seed` (voir DangerSign).
+    seed_key: Mapped[str | None] = mapped_column(String(80), unique=True, nullable=True)
     created_at: Mapped[datetime] = mapped_column(UtcDateTime(), default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(UtcDateTime(), default=utc_now, nullable=False)
 
@@ -293,6 +299,8 @@ class Capsule(Base):
         String(36), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     validated_at: Mapped[datetime | None] = mapped_column(UtcDateTime(), nullable=True)
+    # Identifiant stable des lignes créées par `python -m app.seed` (voir DangerSign).
+    seed_key: Mapped[str | None] = mapped_column(String(80), unique=True, nullable=True)
     created_at: Mapped[datetime] = mapped_column(UtcDateTime(), default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(UtcDateTime(), default=utc_now, nullable=False)
 

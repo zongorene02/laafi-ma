@@ -39,7 +39,7 @@ REQUEST_ID_HEADER = "X-Request-ID"
 class RequestContextMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         # On réutilise l'identifiant fourni par un reverse proxy s'il en a
-        # posé un (Traefik, un load balancer) : la même requête garde alors le
+        # posé un (Render, un load balancer) : la même requête garde alors le
         # même identifiant d'un bout à l'autre de la chaîne, y compris dans
         # les logs du proxy.
         request_id = request.headers.get(REQUEST_ID_HEADER) or uuid.uuid4().hex[:12]

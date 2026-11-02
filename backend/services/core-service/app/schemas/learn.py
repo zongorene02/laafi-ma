@@ -50,6 +50,9 @@ class CapsuleOut(BaseModel):
     translations: dict[str, CapsuleTranslationOut]
     quiz: list[QuizQuestion]
     license: str
+    # True seulement pour le contenu `sourced`. Pas de `source` ici : la table
+    # des capsules n'a pas cette colonne, la source est citée dans le texte.
+    provisional: bool
     validated_by: UserRef | None
     validated_at: Timestamp | None
     created_at: Timestamp

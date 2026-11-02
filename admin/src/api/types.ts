@@ -4,7 +4,7 @@
 export type Role = "woman" | "agent" | "validator" | "admin";
 export type StaffRole = "agent" | "validator" | "admin";
 export type Lang = "fr" | "mos" | "dyu";
-export type ContentStatus = "draft" | "validated" | "archived";
+export type ContentStatus = "draft" | "sourced" | "validated" | "archived";
 export type AudioKind = "human" | "synthetic";
 
 export interface CurrentUser {
@@ -50,8 +50,8 @@ export interface AdminStats {
   women_accounts: number;
   agents: number;
   validators: number;
-  kb: { draft: number; validated: number };
-  capsules: { draft: number; validated: number };
+  kb: { draft: number; sourced: number; validated: number };
+  capsules: { draft: number; sourced: number; validated: number };
   unanswered_open: number;
   events_last_30_days: number;
 }
@@ -199,6 +199,8 @@ export interface Capsule {
   translations: Partial<Record<Lang, CapsuleTranslation | null>>;
   quiz: QuizQuestion[];
   license: string;
+  /** Vrai seulement pour `sourced` : contenu relu par aucune sage-femme. */
+  provisional?: boolean;
   validated_by: ValidatedBy | null;
   validated_at: string | null;
 }

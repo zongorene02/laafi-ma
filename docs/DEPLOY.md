@@ -1,10 +1,12 @@
 # Mettre la démo en ligne gratuitement
 
+Pas de Docker : l'API tourne sur le runtime Python natif de Render.
+
 | Partie | Hébergeur | Adresse |
 |---|---|---|
-| Application web | GitHub Pages | `https://renezongo.github.io/laafi-ma/` |
-| Console admin | GitHub Pages | `https://renezongo.github.io/laafi-ma/admin/` |
-| Statistiques publiques | GitHub Pages | `https://renezongo.github.io/laafi-ma/admin/#/public` |
+| Application web | GitHub Pages | `https://zongorene02.github.io/laafi-ma/` |
+| Console admin | GitHub Pages | `https://zongorene02.github.io/laafi-ma/admin/` |
+| Statistiques publiques | GitHub Pages | `https://zongorene02.github.io/laafi-ma/admin/#/public` |
 | API | Render (gratuit) | `https://laafi-ma-api.onrender.com` |
 | Base de données | Neon (gratuit) | privée |
 | APK de démonstration | GitHub Releases | release `demo` du dépôt |
@@ -22,8 +24,12 @@
   environ une minute. Prévoyez d'ouvrir l'application avant une présentation.
 - **Fichiers audio envoyés dans la console :** perdus à chaque redémarrage de
   Render, car son disque n'est pas conservé. Le texte, lui, reste dans Neon.
-- **Assistant vide au départ :** il faut saisir et valider des réponses dans la
-  console.
+- **Contenu non relu par une sage-femme.** Les réponses, les capsules et les
+  signes de danger préchargés viennent de documents publics de l'OMS et de
+  l'UNFPA. L'application les affiche comme non relus. Ils existent en français
+  seulement. `SERVE_SOURCED_CONTENT=true` dans `render.yaml` les rend visibles :
+  ce réglage doit rester à `false` pour un vrai pilote tant que ce contenu n'est
+  pas validé dans la console.
 
 ## 1. Neon (base de données)
 

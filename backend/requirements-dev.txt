@@ -1,6 +1,6 @@
 # Outils de développement du backend (lint, typage, tests).
-# Installés EN PLUS du requirements.txt de core-service — jamais dans
-# l'image Docker de production, qui n'a besoin que du code applicatif.
+# Installés EN PLUS du requirements.txt de core-service — jamais en
+# production, qui n'a besoin que du code applicatif.
 ruff==0.15.1
 mypy==1.19.1
 pytest==9.1.1

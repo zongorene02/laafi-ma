@@ -15,10 +15,6 @@ flowchart TB
         Admin[Console d'administration<br/>React + Vite, web]
     end
 
-    subgraph Gateway
-        Traefik[Traefik<br/>reverse proxy, préfixe /api]
-    end
-
     subgraph Backend
         Core[core-service<br/>FastAPI : assistant, base de connaissances,<br/>sauvegarde chiffrée, annuaire, espace agent,<br/>capsules, statistiques, administration]
         Models[NLLB-200 + LoRA mooré<br/>Whisper, MMS-ASR, MMS-TTS<br/>CTranslate2 int8]
@@ -29,9 +25,8 @@ flowchart TB
         Media[(Dossier média<br/>audio humain + synthèses en cache)]
     end
 
-    App -->|HTTPS| Traefik
-    Admin -->|HTTPS| Traefik
-    Traefik --> Core
+    App -->|HTTPS| Core
+    Admin -->|HTTPS| Core
     Core --> Models
     Core --> DB
     Core --> Media
@@ -42,10 +37,13 @@ Un seul service applicatif : `core-service`. Les services hérités de Trad IA
 fonctionnalité de Laafi Ma n'en a besoin, et chaque service Python+IA
 supplémentaire coûte des centaines de Mo de mémoire sur une machine à 8 Go.
 
-En local sans Docker, Traefik est omis : l'app et la console appellent
-directement `http://127.0.0.1:8000`. Tout se démarre avec
-[`scripts/dev.ps1`](../scripts/dev.ps1) (`-NoModels` pour démarrer l'API sans
-charger les modèles d'IA).
+En local, l'app et la console appellent directement `http://127.0.0.1:8000`.
+Tout se démarre avec [`scripts/dev.ps1`](../scripts/dev.ps1) (`-NoModels` pour
+démarrer l'API sans charger les modèles d'IA).
+
+Déploiement sans Docker : l'API tourne sur le runtime Python natif de Render
+(voir [`DEPLOY.md`](DEPLOY.md)). `GET /metrics` reste exposé par l'API pour un
+outil de supervision, aucun n'est déployé.
 
 ## Rôles
 
@@ -75,7 +73,7 @@ email, c'est un admin qui en génère un nouveau.
 | 2. Événements sans identifiant | `event_counts` = compteurs journaliers (jour, type, langue, district) : ni ligne par événement, ni compte, ni appareil, ni IP, ni heure (`routers/events.py`) |
 | 3. Petites cellules supprimées | `GET /public/stats` retire toute cellule < `PUBLIC_STATS_MIN_COUNT` ; `help_*` et `danger_flagged` jamais par district ni par semaine |
 | 4. Orientations VBG anonymes | La table `gbv_referrals` n'a aucune colonne de nom ni de bénéficiaire |
-| 5. Seul le contenu validé est servi | L'assistant, la FAQ, les signes de danger publics, les capsules publiques et la synthèse vocale ne lisent que `status = validated` |
+| 5. Seul le contenu validé est servi | L'assistant, la FAQ, les signes de danger publics, les capsules publiques et la synthèse vocale passent tous par `served_statuses()` (`app/content.py`) : `validated`, plus `sourced` seulement si `SERVE_SOURCED_CONTENT=true`, toujours signalé `provisional: true` |
 
 Les comptes `woman` ne sont jamais listés ni manipulables individuellement
 dans la console (`GET /admin/users` les exclut) : l'admin n'en voit que le
@@ -87,8 +85,8 @@ nombre.
 
 ```
 voix (fr/mos/dyu) --Whisper ou MMS-ASR--> texte --NLLB (pivot anglais pour le mooré)--> français
-    --rapprochement TF-IDF n-grammes--> entrée VALIDÉE --> réponse dans la langue demandée
-    \--mots-clés des signes de danger VALIDÉS--> alerte "allez au centre de santé"
+    --rapprochement TF-IDF n-grammes--> entrée SERVIE --> réponse dans la langue demandée (sinon en français)
+    \--mots-clés des signes de danger SERVIS--> alerte "allez au centre de santé"
 ```
 
 Le rapprochement (`app/matching.py`) est en pur Python, sans modèle : texte
@@ -99,7 +97,8 @@ anonymement dans `unanswered_questions` pour les validateurs, et l'app reçoit
 « Demandez à votre agent de santé ». La détection des signes de danger est
 indépendante du rapprochement. `ask-text` en français fonctionne sans aucun
 modèle chargé. Rien n'est jamais généré : la réponse est toujours un texte
-relu par un professionnel de santé.
+relu par un professionnel de santé, ou, si `SERVE_SOURCED_CONTENT=true`, un
+texte tiré d'une source citée que l'app affiche comme non relu.
 
 `/assistant/transcribe` ne fait que la première étape (voix -> texte, et sa
 traduction française) : l'app s'en sert pour faire confirmer la question, ou
@@ -113,9 +112,9 @@ puis mise en cache sur disque. L'empreinte du texte fait partie du nom : un
 texte modifié change d'URL, et l'ancienne URL répond 404 (jamais un audio
 périmé).
 
-**Circuit de validation** : `draft` → `validated` → `archived`. Toute
-modification (texte, mots-clés, audio, traduction automatique) renvoie le
-contenu en `draft`. `POST /kb/entries/{id}/translate` remplit le mooré et le
+**Circuit de validation** : `draft` → `sourced` (seed seulement) → `validated`
+→ `archived`. Toute modification (texte, mots-clés, audio, traduction
+automatique) renvoie le contenu en `draft`. `POST /kb/entries/{id}/translate` remplit le mooré et le
 dioula manquants par traduction automatique, marqués `machine_translated`
 jusqu'à leur relecture.
 
@@ -143,7 +142,7 @@ traduit.
 | `matching.py` | Normalisation, rapprochement, mots-clés de danger |
 | `audio_store.py` / `uploads.py` / `media_service.py` | Fichiers audio, lecture sûre des envois, décodage ffmpeg |
 | `translation_service.py` / `fast_translation_service.py` / `speech_service.py` | Modèles d'IA (chargés paresseusement, jamais dans les tests) |
-| `seed.py` / `bootstrap_admin.py` | Données sourcées de départ, premier admin |
+| `seed.py` / `seed_content.py` / `bootstrap_admin.py` | Données sourcées de départ, premier admin |
 
 ## Langues et modèles d'IA
 
@@ -167,6 +166,8 @@ national contre les VBG (80 00 12 87, source Burkina24 du 2 mars 2021), les
 numéros d'urgence police 17, gendarmerie 16 et sapeurs-pompiers 18 (source :
 conseils aux voyageurs du SPF Affaires étrangères belge, mis à jour le
 20 octobre 2026) — tous avec `verified_at` vide tant qu'ils n'ont pas été
-reconfirmés — et les signes de danger de la grossesse (liste OMS) en
-brouillon, en français uniquement. Aucune réponse de santé, capsule, district
-ni autre numéro n'est inventé : ils viendront de sources réelles validées.
+reconfirmés. Il insère aussi, avec le statut `sourced` et en français
+uniquement, les signes de danger de la grossesse et du bébé (OMS) et les
+réponses et capsules de `app/seed_content.py` (OMS, UNFPA). Aucune sage-femme
+ne les a relus : ils ne sont servis que si `SERVE_SOURCED_CONTENT=true`, jusqu'à
+leur validation dans la console. Aucun district ni autre numéro n'est inventé.

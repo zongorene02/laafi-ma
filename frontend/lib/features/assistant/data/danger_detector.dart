@@ -4,7 +4,7 @@ import 'assistant_models.dart';
 export '../../../core/utils/text.dart' show normalizeText;
 
 /// Détection HORS CONNEXION des signes de danger dans une question écrite en
-/// français, avec les mots-clés validés téléchargés depuis l'API.
+/// français, avec les mots-clés téléchargés depuis l'API.
 ///
 /// Un mot-clé correspond s'il apparaît au DÉBUT d'un mot (« saigne » trouve
 /// « saignements ») : assez souple pour les variantes, sans déclencher sur un

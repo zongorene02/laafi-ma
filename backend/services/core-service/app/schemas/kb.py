@@ -129,12 +129,18 @@ class AssistantEntry(BaseModel):
     answer: str
     audio_url: str | None
     audio_kind: AudioKind | None
+    # True seulement pour le contenu `sourced` : l'app dit alors qu'aucune
+    # sage-femme ne l'a relu (voir docs/API.md).
+    provisional: bool
+    source: str | None
 
 
 class DangerSignBrief(BaseModel):
     id: str
     label: str
     advice: str
+    provisional: bool
+    source: str | None
 
 
 class AskResponse(BaseModel):

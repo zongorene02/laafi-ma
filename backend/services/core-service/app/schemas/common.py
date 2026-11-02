@@ -32,7 +32,7 @@ def _canonical_uuid(value: str) -> str:
 # Identifiant UUID transmis comme chaîne, normalisé en minuscules.
 UuidStr = Annotated[str, AfterValidator(_canonical_uuid)]
 
-ContentStatus = Literal["draft", "validated", "archived"]
+ContentStatus = Literal["draft", "sourced", "validated", "archived"]
 AudioKind = Literal["human", "synthetic"]
 
 

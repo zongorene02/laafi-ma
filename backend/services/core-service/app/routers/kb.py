@@ -2,9 +2,10 @@
 Base de connaissances, signes de danger et questions sans réponse —
 réservé aux validateurs (sages-femmes, médecins) et aux admins.
 
-Circuit : `draft` -> `validated` -> `archived`. Toute modification d'un
-contenu (texte, mots-clés, audio, traduction automatique) le renvoie en
-`draft` : seul un contenu relu tel quel est servi à l'app.
+Circuit : `draft` -> `sourced` (seed seulement) -> `validated` -> `archived`.
+Toute modification d'un contenu (texte, mots-clés, audio, traduction
+automatique) le renvoie en `draft` : seul un contenu relu tel quel est servi à
+l'app (voir `served_statuses` dans app/content.py pour le cas `sourced`).
 """
 
 from typing import Any
