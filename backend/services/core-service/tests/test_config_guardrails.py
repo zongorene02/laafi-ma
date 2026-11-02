@@ -55,3 +55,23 @@ def test_development_stays_frictionless():
     c'est la contrepartie assumée du garde-fou ci-dessus."""
     settings = Settings(_env_file=None, environment="development")
     assert settings.jwt_secret_key == DEV_ONLY_PLACEHOLDER_SECRET
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "admin@example.org",
+        '["admin@example.org"]',
+        "['admin@example.org']",
+        " admin@example.org ",
+        "[admin@example.org]",
+    ],
+)
+def test_admin_emails_accepts_every_format_typed_on_a_host(monkeypatch, raw):
+    monkeypatch.setenv("ADMIN_EMAILS", raw)
+    assert Settings().admin_emails == ["admin@example.org"]
+
+
+def test_admin_emails_accepts_several_addresses(monkeypatch):
+    monkeypatch.setenv("ADMIN_EMAILS", "a@example.org, b@example.org")
+    assert Settings().admin_emails == ["a@example.org", "b@example.org"]

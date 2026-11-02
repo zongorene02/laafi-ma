@@ -13,8 +13,11 @@ standard ("configuration externalisée") qui permet de déployer EXACTEMENT
 le même code en dev/staging/production, seule la config change.
 """
 
-from pydantic import model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+import re
+from typing import Annotated
+
+from pydantic import field_validator, model_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 # Valeur d'exemple, volontairement identique dans .env.example : sert de
 # repère au garde-fou de démarrage plus bas (voir
@@ -59,9 +62,9 @@ class Settings(BaseSettings):
     # --- Administration ---
 
     # Emails des tout premiers admins, créés par `python -m app.bootstrap_admin`
-    # (format JSON dans .env, ex: ADMIN_EMAILS=["admin@ztech.example"]).
+    # Accepte `a@x.org`, `a@x.org,b@x.org` ou le format JSON `["a@x.org"]`.
     # Vide par défaut : personne n'est admin tant que ce n'est pas configuré.
-    admin_emails: list[str] = []
+    admin_emails: Annotated[list[str], NoDecode] = []
 
     # --- Assistant (module 1) ---
 
@@ -112,6 +115,16 @@ class Settings(BaseSettings):
     # développement local. En production : une URL PostgreSQL (voir
     # docs/DEPLOY.md) — le code SQLAlchemy ne change pas.
     database_url: str = "sqlite:///./dev.db"
+
+    @field_validator("admin_emails", mode="before")
+    @classmethod
+    def _split_admin_emails(cls, value: object) -> object:
+        """Une valeur mal formée ferait planter le service au démarrage :
+        on lit les adresses quel que soit le format saisi sur l'hébergeur."""
+        if not isinstance(value, str):
+            return value
+        cleaned = re.sub(r"[\[\]\"'“”«»\s]", " ", value)
+        return [email for email in re.split(r"[,; ]+", cleaned) if email]
 
     @model_validator(mode="after")
     def _refuse_dev_defaults_outside_development(self) -> "Settings":
