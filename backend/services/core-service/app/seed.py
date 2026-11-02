@@ -268,6 +268,17 @@ def _capsule(item: dict[str, Any]) -> Capsule:
     )
 
 
+def _refresh_sourced_entry(row: KbEntry, fresh: KbEntry) -> None:
+    """Met à jour une fiche `sourced` : personne ne l'a touchée, car toute
+    modification la repasse en brouillon. Une correction de `seed_content.py`
+    atteint ainsi une base déjà remplie."""
+    if row.status == STATUS_SOURCED:
+        row.topic = fresh.topic
+        row.is_danger_topic = fresh.is_danger_topic
+        row.translations = fresh.translations
+        row.source = fresh.source
+
+
 def seed(db: Session) -> dict[str, int]:
     """Insère ce qui manque. Renvoie le nombre de lignes créées par table."""
     created = {"help_services": 0, "danger_signs": 0, "kb_entries": 0, "capsules": 0}
@@ -285,11 +296,14 @@ def seed(db: Session) -> dict[str, int]:
                 db.add(_danger_sign(seed_key, label, advice, keywords, source))
                 created["danger_signs"] += 1
 
-    existing_entries = set(db.scalars(select(KbEntry.seed_key).where(KbEntry.seed_key.is_not(None))))
+    existing_entries = {row.seed_key: row for row in db.scalars(select(KbEntry).where(KbEntry.seed_key.is_not(None)))}
     for item in KB_ENTRIES:
-        if item["seed_key"] not in existing_entries:
+        existing = existing_entries.get(item["seed_key"])
+        if existing is None:
             db.add(_kb_entry(item))
             created["kb_entries"] += 1
+        else:
+            _refresh_sourced_entry(existing, _kb_entry(item))
 
     existing_capsules = set(db.scalars(select(Capsule.seed_key).where(Capsule.seed_key.is_not(None))))
     for item in CAPSULES:

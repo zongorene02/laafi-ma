@@ -42,6 +42,46 @@
     For more details:
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
+  <!-- Écran affiché pendant le téléchargement : sans lui, la page reste blanche
+       de longues secondes sur une connexion lente. Retiré à la première image. -->
+  <div id="boot" role="status">
+    <div id="boot-spinner"></div>
+    <p id="boot-title">Laafi Ma</p>
+    <p id="boot-text">Chargement…</p>
+  </div>
+  <style>
+    html, body { margin: 0; height: 100%; background: #FFF8F2; }
+    #boot { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 8px; padding: 24px; text-align: center; color: #3D312A;
+      font-family: system-ui, sans-serif; }
+    #boot p { margin: 0; }
+    #boot-title { font-size: 24px; font-weight: 700; color: #B4532A; }
+    #boot-text { font-size: 18px; max-width: 320px; }
+    #boot-spinner { width: 48px; height: 48px; margin-bottom: 8px; border-radius: 50%;
+      border: 5px solid #F2E3D6; border-top-color: #B4532A; animation: boot-spin 1s linear infinite; }
+    @keyframes boot-spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { #boot-spinner { animation: none; } }
+  </style>
+  <script>
+    (function () {
+      var boot = document.getElementById("boot");
+      function say(text) {
+        document.getElementById("boot-text").textContent = text;
+      }
+      var slow = setTimeout(function () {
+        say("Le chargement est long. Vérifiez votre connexion, ou attendez encore un peu.");
+      }, 45000);
+      window.laafiBootFailed = function () {
+        clearTimeout(slow);
+        document.getElementById("boot-spinner").style.display = "none";
+        say("Le chargement a échoué. Vérifiez votre connexion, puis rechargez la page.");
+      };
+      window.addEventListener("flutter-first-frame", function () {
+        clearTimeout(slow);
+        boot.remove();
+      });
+    })();
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

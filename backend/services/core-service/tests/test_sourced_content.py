@@ -357,3 +357,52 @@ def test_audio_upload_on_sourced_sets_draft(client, db, validator_headers, model
         headers=validator_headers,
     )
     assert response.json()["status"] == "draft"
+
+
+@pytest.mark.parametrize(
+    ("question", "expected"),
+    [
+        ("je saigne beaucoup et je suis enceinte", "kb-signes-danger-grossesse"),
+        ("j'ai accouché hier et je saigne beaucoup", "kb-saignement-apres-accouchement"),
+        ("j'ai de la fièvre et je suis enceinte", "kb-signes-danger-grossesse"),
+    ],
+)
+def test_danger_question_gets_a_danger_answer(client, db, serve_sourced, question, expected):
+    seed(db)
+    body = client.post("/assistant/ask-text", json={"text": question, "lang": "fr"}).json()
+    assert body["danger"] is True
+    entry = db.scalar(select(KbEntry).where(KbEntry.seed_key == expected))
+    assert body["entry"]["id"] == entry.id
+
+
+def test_danger_question_never_gets_a_routine_answer_by_resemblance(client, db, serve_sourced):
+    seed(db)
+    routine = {e.id for e in db.scalars(select(KbEntry)) if not e.is_danger_topic}
+    for question in ["je saigne", "je perds du sang", "j'ai des saignements depuis ce matin"]:
+        body = client.post("/assistant/ask-text", json={"text": question, "lang": "fr"}).json()
+        assert body["danger"] is True, question
+        assert body["entry"] is None or body["entry"]["id"] not in routine, question
+
+
+def test_exact_routine_question_stays_answered_despite_the_danger_keyword(client, db, serve_sourced):
+    seed(db)
+    body = client.post(
+        "/assistant/ask-text", json={"text": "je saigne beaucoup pendant les règles", "lang": "fr"}
+    ).json()
+    entry = db.scalar(select(KbEntry).where(KbEntry.seed_key == "kb-regles-douleur"))
+    assert body["entry"]["id"] == entry.id
+
+
+def test_seed_refreshes_sourced_entries_but_not_edited_ones(db):
+    seed(db)
+    sourced = db.scalar(select(KbEntry).where(KbEntry.seed_key == "kb-anemie"))
+    edited = db.scalar(select(KbEntry).where(KbEntry.seed_key == "kb-fistule"))
+    sourced.translations = {"fr": {"question": "vieux", "answer": "vieux", "variants": []}}
+    edited.translations = {"fr": {"question": "relu", "answer": "relu", "variants": []}}
+    edited.status = "draft"
+    db.commit()
+    seed(db)
+    db.refresh(sourced)
+    db.refresh(edited)
+    assert sourced.translations["fr"]["question"] != "vieux"
+    assert edited.translations["fr"]["question"] == "relu"

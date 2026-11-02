@@ -88,7 +88,17 @@ KB_ENTRIES: list[dict[str, Any]] = [
         "kb-signes-danger-grossesse",
         "grossesse",
         "Quels sont les signes de danger pendant la grossesse ?",
-        ["signes de danger grossesse", "quand aller vite au centre de santé enceinte", "danger pendant la grossesse"],
+        [
+            "signes de danger grossesse",
+            "quand aller vite au centre de santé enceinte",
+            "danger pendant la grossesse",
+            "je suis enceinte et je saigne",
+            "je saigne beaucoup et je suis enceinte",
+            "je suis enceinte et j'ai de la fièvre",
+            "j'ai de la fièvre et je suis enceinte",
+            "j'ai très mal au ventre et je suis enceinte",
+            "je suis enceinte et j'ai très mal à la tête",
+        ],
         "Allez tout de suite au centre de santé, de jour comme de nuit, sans attendre, si vous avez : un "
         "saignement par le vagin, des convulsions, de très forts maux de tête avec la vue trouble, de la fièvre "
         "et que vous êtes trop faible pour vous lever, une très forte douleur au ventre, ou si vous respirez vite "
@@ -212,7 +222,14 @@ KB_ENTRIES: list[dict[str, Any]] = [
         "kb-saignement-apres-accouchement",
         "post_partum",
         "Quels sont les signes de danger après l'accouchement ?",
-        ["saignement après l'accouchement", "hémorragie après l'accouchement", "le placenta n'est pas sorti"],
+        [
+            "saignement après l'accouchement",
+            "hémorragie après l'accouchement",
+            "le placenta n'est pas sorti",
+            "j'ai accouché et je saigne beaucoup",
+            "j'ai accouché hier et je saigne",
+            "je saigne beaucoup depuis l'accouchement",
+        ],
         "Allez tout de suite au centre de santé, de jour comme de nuit, sans attendre, si : vous saignez beaucoup "
         "(un linge trempé en moins de 5 minutes, ou 2 à 3 linges en 20 à 30 minutes) ; le saignement augmente au "
         "lieu de diminuer ; le placenta n'est pas sorti 1 heure après la naissance ; vous avez des convulsions ; "

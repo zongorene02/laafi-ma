@@ -122,8 +122,12 @@ app.state.limiter = limiter
 # handler est fourni tel quel par slowapi).
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 
-# Métriques Prometheus sur /metrics (requêtes, latences, codes d'erreur).
-Instrumentator().instrument(app).expose(app)
+# Métriques Prometheus sur /metrics (requêtes, latences, codes d'erreur), en
+# développement seulement : elles comptent les visites par page, Aide comprise,
+# et rien ne doit les lire publiquement.
+instrumentator = Instrumentator().instrument(app)
+if settings.environment == "development":
+    instrumentator.expose(app)
 
 # Traçage distribué (désactivé tant que TRACING_ENABLED n'est pas vrai).
 setup_tracing(app)

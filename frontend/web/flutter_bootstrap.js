@@ -18,8 +18,17 @@
 // À réévaluer après une montée de version de Flutter : si le choix automatique
 // redevient fiable, ce fichier peut simplement être supprimé (Flutter
 // régénérera son bootstrap par défaut).
-_flutter.loader.load({
-  config: {
-    renderer: "canvaskit",
-  },
+//
+// `canvasKitBaseUrl` : le moteur vient de notre site et non du CDN de Google. Si
+// ce CDN est injoignable (DNS, pare-feu, réseau lent), la page resterait vide.
+Promise.resolve(
+  _flutter.loader.load({
+    config: {
+      renderer: "canvaskit",
+      canvasKitBaseUrl: "canvaskit/",
+    },
+  }),
+).catch(function (error) {
+  console.error(error);
+  window.laafiBootFailed && window.laafiBootFailed();
 });

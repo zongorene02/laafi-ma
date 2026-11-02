@@ -4,9 +4,9 @@ Pas de Docker : l'API tourne sur le runtime Python natif de Render.
 
 | Partie | Hébergeur | Adresse |
 |---|---|---|
-| Application web | Cloudflare Workers | `https://laafi-ma.<compte>.workers.dev/` |
-| Console admin | Cloudflare Workers | `https://laafi-ma.<compte>.workers.dev/admin/` |
-| Statistiques publiques | Cloudflare Workers | `https://laafi-ma.<compte>.workers.dev/admin/#/public` |
+| Application web | Cloudflare Workers | `https://laafi-ma.zongorene08.workers.dev/` |
+| Console admin | Cloudflare Workers | `https://laafi-ma.zongorene08.workers.dev/admin/` |
+| Statistiques publiques | Cloudflare Workers | `https://laafi-ma.zongorene08.workers.dev/admin/#/public` |
 | API | Render (gratuit) | `https://laafi-ma-api.onrender.com` |
 | Base de données | Neon (gratuit) | privée |
 | APK de démonstration | GitHub Releases | release `demo` du dépôt |
@@ -62,7 +62,7 @@ de démonstration**.
 3. Nommez le projet `laafi-ma` et validez. `wrangler.jsonc` indique à Cloudflare
    comment construire et publier le site. Le premier build prend plusieurs
    minutes.
-4. Notez l'adresse du Worker, de la forme `https://laafi-ma.<compte>.workers.dev`
+4. Notez l'adresse du Worker, de la forme `https://laafi-ma.zongorene08.workers.dev`
    (**Settings > Domains & Routes**).
 5. Ajoutez cette adresse à `CORS_ALLOWED_ORIGINS` dans `render.yaml` : sinon
    l'application ne pourra pas joindre l'API.

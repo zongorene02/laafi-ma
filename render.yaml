@@ -29,7 +29,7 @@ services:
       - key: JWT_SECRET_KEY
         generateValue: true
       - key: CORS_ALLOWED_ORIGINS
-        value: '["https://laafi-ma.pages.dev"]'
+        value: '["https://laafi-ma.zongorene08.workers.dev"]'
       # Les trois valeurs suivantes sont demandées par Render à la création.
       - key: DATABASE_URL
         sync: false

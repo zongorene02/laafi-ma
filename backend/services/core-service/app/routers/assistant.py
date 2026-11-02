@@ -44,7 +44,7 @@ from app.db_models import DangerSign, KbEntry, UnansweredQuestion
 from app.languages import UserLang
 from app.limiter import limiter
 from app.logging_config import get_logger
-from app.matching import Candidate, basic_normalize, best_match, contains_keyword
+from app.matching import Candidate, MatchResult, basic_normalize, best_match, contains_keyword
 from app.schemas.common import iso_utc
 from app.schemas.kb import (
     AskResponse,
@@ -64,6 +64,9 @@ logger = get_logger(__name__)
 
 VOICE_UNAVAILABLE = "Assistant vocal indisponible"
 TRANSLATION_UNAVAILABLE = "Traduction indisponible : l'assistant ne répond pour l'instant qu'en français écrit"
+
+# Au-dessus de ce score, la question est presque mot pour mot celle de la fiche.
+EXACT_MATCH_CONFIDENCE = 0.95
 
 
 def _fallback_message(lang: str) -> str:
@@ -115,6 +118,18 @@ def kb_candidates(entries: Iterable[KbEntry]) -> list[Candidate]:
     return candidates
 
 
+def match_with_danger_signs(text_fr: str, entries: Iterable[KbEntry], match: MatchResult | None) -> MatchResult | None:
+    """Une question qui décrit un signe de danger ne reçoit pas une réponse de
+    routine trouvée par ressemblance : « je saigne et je suis enceinte » ressemble
+    à une fiche sur les règles. On cherche alors parmi les fiches de danger ; sans
+    réponse assez proche, le bandeau d'urgence reste seul, ce qui est plus sûr."""
+    entries = list(entries)
+    by_id = {entry.id: entry for entry in entries}
+    if match is None or match.confidence >= EXACT_MATCH_CONFIDENCE or by_id[match.entry_id].is_danger_topic:
+        return match
+    return best_match(text_fr, kb_candidates(entry for entry in entries if entry.is_danger_topic))
+
+
 def answer_question(db: Session, *, text_fr: str, lang: str, transcript: str | None) -> AskResponse:
     """Cœur de l'assistant, commun aux questions écrites et vocales."""
     question_fr = None if lang == "fr" else text_fr
@@ -122,6 +137,8 @@ def answer_question(db: Session, *, text_fr: str, lang: str, transcript: str | N
 
     entries = {entry.id: entry for entry in _served_entries(db)}
     match = best_match(text_fr, kb_candidates(entries.values())) if text_fr.strip() else None
+    if danger_signs:
+        match = match_with_danger_signs(text_fr, entries.values(), match)
     confidence = match.confidence if match is not None else 0.0
 
     if match is not None and confidence >= settings.assistant_min_confidence:
