@@ -4,9 +4,9 @@ Pas de Docker : l'API tourne sur le runtime Python natif de Render.
 
 | Partie | Hébergeur | Adresse |
 |---|---|---|
-| Application web | GitHub Pages | `https://zongorene02.github.io/laafi-ma/` |
-| Console admin | GitHub Pages | `https://zongorene02.github.io/laafi-ma/admin/` |
-| Statistiques publiques | GitHub Pages | `https://zongorene02.github.io/laafi-ma/admin/#/public` |
+| Application web | Cloudflare Pages | `https://laafi-ma.pages.dev/` |
+| Console admin | Cloudflare Pages | `https://laafi-ma.pages.dev/admin/` |
+| Statistiques publiques | Cloudflare Pages | `https://laafi-ma.pages.dev/admin/#/public` |
 | API | Render (gratuit) | `https://laafi-ma-api.onrender.com` |
 | Base de données | Neon (gratuit) | privée |
 | APK de démonstration | GitHub Releases | release `demo` du dépôt |
@@ -49,14 +49,29 @@ Pas de Docker : l'API tourne sur le runtime Python natif de Render.
 5. Ouvrez `https://laafi-ma-api.onrender.com/health`. Vous devez voir
    `"status":"ok"`.
 
-Si Render a donné une autre adresse, créez sur GitHub la variable
-`API_BASE_URL` avec cette adresse (**Settings > Secrets and variables >
-Actions > Variables**), puis relancez les deux workflows.
+Si Render a donné une autre adresse, mettez-la dans `API_BASE_URL` à l'étape 3,
+et créez aussi sur GitHub la variable `API_BASE_URL` (**Settings > Secrets and
+variables > Actions > Variables**) pour l'APK, puis relancez le workflow **APK
+de démonstration**.
 
-## 3. GitHub Pages
+## 3. Cloudflare Pages (application web et console)
 
-Dans le dépôt : **Settings > Pages > Source : GitHub Actions**. Relancez ensuite
-le workflow **Déploiement web** dans l'onglet **Actions**.
+1. Créez un compte sur [cloudflare.com](https://dash.cloudflare.com/sign-up).
+2. Ouvrez **Workers & Pages > Create > Pages > Connect to Git**, puis autorisez
+   GitHub et choisissez le dépôt `laafi-ma`.
+3. Nommez le projet `laafi-ma` et choisissez la branche `main`.
+4. Réglez le build :
+   - **Framework preset :** None ;
+   - **Build command :** `bash scripts/cloudflare-build.sh` ;
+   - **Build output directory :** `site`.
+5. Validez. Le premier build prend plusieurs minutes.
+
+Si Cloudflare impose un autre nom que `laafi-ma.pages.dev`, ajoutez la nouvelle
+adresse dans `CORS_ALLOWED_ORIGINS` sur Render : sinon l'application ne pourra
+pas joindre l'API.
+
+GitHub Actions reste utilisé pour les tests et pour construire l'APK : Cloudflare
+ne fait que publier le site.
 
 ## 4. Vérifier
 

@@ -26,7 +26,7 @@ profiles on a shared phone, auto-lock.
 - [`admin/`](admin/): React console for validators and admins, plus the public anonymous statistics page.
 - [`docs/API.md`](docs/API.md): the API contract shared by the three parts.
 - [`docs/architecture.md`](docs/architecture.md): flows, AI models, deployment.
-- [`docs/DEPLOY.md`](docs/DEPLOY.md): free online demo (GitHub Pages, Render, Neon).
+- [`docs/DEPLOY.md`](docs/DEPLOY.md): free online demo (Cloudflare Pages, Render, Neon).
 
 ## Install and run locally (Windows)
 

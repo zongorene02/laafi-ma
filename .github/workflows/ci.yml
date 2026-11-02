@@ -151,3 +151,21 @@ jobs:
       # les deux échouent la CI, aucune erreur de type ne peut plus passer.
       - name: Vérification des types et build
         run: npm run build
+
+  # Exécute le script de build de Cloudflare Pages sur le même système que son
+  # image (Ubuntu 22.04) : une erreur s'y voit ici, sans compte Cloudflare.
+  cloudflare:
+    name: Build Cloudflare Pages
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build du site
+        run: bash scripts/cloudflare-build.sh
+
+      - name: Vérifier le site
+        run: test -f site/index.html && test -f site/admin/index.html

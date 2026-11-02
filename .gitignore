@@ -67,3 +67,6 @@ frontend/.packages
 # captures, présentation). Il n'a pas à voyager avec le code, y compris dans
 # un dépôt privé — à sauvegarder séparément.
 Candidature/
+
+# Site assemblé par scripts/cloudflare-build.sh
+site/
