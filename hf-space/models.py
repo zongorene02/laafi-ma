@@ -54,11 +54,12 @@ for _lang in sorted(logic.MMS_ASR_LANGS):
 
 # --- Traduction ---
 nllb_tokenizer = AutoTokenizer.from_pretrained(logic.NLLB_MODEL)
-# Adaptateur greffé sur le processeur, puis l'ensemble envoyé sur `cuda` : PEFT
-# lit ses poids directement sur l'appareil du modèle, et hors d'une fonction
-# `@spaces.GPU` la lecture vers `cuda` échoue (« No CUDA GPUs are available »).
+# Adaptateur lu sur le processeur (`torch_device="cpu"`), puis l'ensemble
+# envoyé sur `cuda`. Sans ce réglage, PEFT lit ses poids vers `cuda` dès que
+# ZeroGPU simule la carte, et la lecture échoue hors d'une fonction
+# `@spaces.GPU` (« No CUDA GPUs are available »).
 _nllb_base = AutoModelForSeq2SeqLM.from_pretrained(logic.NLLB_MODEL)
-nllb_model = PeftModel.from_pretrained(_nllb_base, str(MOORE_ADAPTER_DIR)).to(DEVICE)
+nllb_model = PeftModel.from_pretrained(_nllb_base, str(MOORE_ADAPTER_DIR), torch_device="cpu").to(DEVICE)
 nllb_model.eval()
 
 # --- Synthèse vocale : un modèle par langue ---
