@@ -16,6 +16,7 @@ from app.db_models import Capsule, KbEntry
 from app.fast_translation_service import fast_translation_service
 from app.languages import USER_LANGUAGES
 from app.logging_config import get_logger
+from app.remote_voice import RemoteSpeechService, RemoteTranslationService
 from app.speech_service import speech_service
 from app.translation_service import translation_service
 
@@ -33,6 +34,18 @@ def database_is_reachable() -> bool:
         return False
 
 
+def voice_backend() -> str:
+    """Où tournent la voix et la traduction : "local" (modèles sur cette
+    machine), "remote" (Space Hugging Face, voir remote_voice.py) ou "none".
+    "remote" dit que le Space est CONFIGURÉ, pas qu'il répond : /health ne le
+    sonde pas, pour ne pas le réveiller ni consommer son quota."""
+    if isinstance(speech_service, RemoteSpeechService) or isinstance(translation_service, RemoteTranslationService):
+        return "remote"
+    if speech_service.is_loaded or translation_service.is_loaded:
+        return "local"
+    return "none"
+
+
 def health_payload() -> dict[str, Any]:
     database_ok = database_is_reachable()
     return {
@@ -42,6 +55,7 @@ def health_payload() -> dict[str, Any]:
         # Permet à un client de savoir s'il peut proposer le mode rapide, au
         # lieu de l'afficher puis d'échouer au premier appel.
         "fast_mode_available": fast_translation_service.is_available(),
+        "voice_backend": voice_backend(),
         "database": "ok" if database_ok else "error",
     }
 

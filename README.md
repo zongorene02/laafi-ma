@@ -52,7 +52,9 @@ them, voice and Mooré/Dioula return `503`; everything else works.
 ## Deploy
 
 There is no Docker image. The online demo runs on Render's native Python
-runtime (`render.yaml`, see [`docs/DEPLOY.md`](docs/DEPLOY.md)).
+runtime (`render.yaml`, see [`docs/DEPLOY.md`](docs/DEPLOY.md)). Voice and
+Mooré/Dioula run on a free Hugging Face ZeroGPU Space (`hf-space/`), called by
+the API when `VOICE_SPACE` is set: 5 GPU minutes a day, slow first call.
 
 ## Tests
 

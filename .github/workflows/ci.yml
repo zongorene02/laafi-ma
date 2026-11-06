@@ -152,6 +152,30 @@ jobs:
       - name: Vérification des types et build
         run: npm run build
 
+  # Space Hugging Face (hf-space/) : on ne peut pas y charger les modèles (ni
+  # carte graphique ni plusieurs Go à télécharger). On vérifie que le code se
+  # compile et on teste sa logique sans modèle (numpy et scipy seulement).
+  hf-space:
+    name: Space Hugging Face (voix)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: hf-space
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Compilation
+        run: python -m py_compile app.py models.py voice_logic.py
+
+      - name: Tests de la logique sans modèle
+        run: |
+          pip install numpy==2.5.2 scipy==1.18.1 pytest==9.1.1
+          python -m pytest tests/test_voice_logic.py -v
+
   # Exécute le script de build du site Cloudflare sur le même système que son
   # image (Ubuntu 22.04) : une erreur s'y voit ici, sans compte Cloudflare.
   cloudflare:

@@ -1,11 +1,15 @@
 # Dépendances de l'API SANS les modèles d'IA (ni torch, ni transformers) :
 # pour un hébergement à 512 Mo de RAM, avec LOAD_MODELS_ON_STARTUP=false.
-# Mêmes versions que requirements.txt. Voix et mooré/dioula répondent 503.
+# Mêmes versions que requirements.txt. Voix et mooré/dioula passent par le
+# Space Hugging Face VOICE_SPACE (gradio_client, sans torch) ; sans Space
+# configuré, ils répondent 503.
 alembic==1.19.2
 bcrypt==5.0.0
 email-validator==2.3.0
 fastapi==0.141.1
+gradio_client==2.7.2
 httptools==0.8.0
+huggingface_hub==1.30.0
 imageio-ffmpeg==0.6.0
 numpy==2.5.2
 opentelemetry-api==1.44.0

@@ -42,7 +42,11 @@ Statuses for KB entries, danger signs and capsules: `draft` → `sourced` (seed 
 ## Health & meta
 
 ### `GET /health`
-`200 {"status":"ok","translation_model_loaded":bool,"speech_model_loaded":bool,"fast_mode_available":bool,"database":"ok"|"error"}`
+`200 {"status":"ok","translation_model_loaded":bool,"speech_model_loaded":bool,"fast_mode_available":bool,"voice_backend":"local"|"remote"|"none","database":"ok"|"error"}`
+
+- `voice_backend`: where speech and translation run. `local` = models loaded on this server; `remote` = models on the Hugging Face ZeroGPU Space set in `VOICE_SPACE` (used only when `LOAD_MODELS_ON_STARTUP=false`, see `hf-space/` and `docs/DEPLOY.md`); `none` = no models (voice and Mooré/Dioula answer `503`).
+- With `remote`, `*_model_loaded` are `true` as soon as the Space is configured: `/health` never calls the Space (it would wake it and spend its GPU quota). If the Space does not answer within `VOICE_SPACE_TIMEOUT_SECONDS` (default 180 s, cold start included) or fails, every endpoint that needs it answers `503 {"detail":"Service vocal momentanément indisponible, réessayez dans quelques minutes"}` with `Retry-After: 60`, then answers `503` at once for 30 s. The client handles it like "models not loaded".
+- Privacy with `remote`: audio and text go to the Space only for the call; neither the API nor the Space logs them. The Space deletes received audio as soon as it is read; synthesized audio stays at most about 20 minutes in its Gradio cache. The Hugging Face token is never logged. The TTS audio cache in `MEDIA_DIR` still applies, so each validated text is synthesized once.
 
 ### `GET /languages`
 `200 [{"code":"fr","name":"Français"},{"code":"mos","name":"Mooré"},{"code":"dyu","name":"Dioula"}]`

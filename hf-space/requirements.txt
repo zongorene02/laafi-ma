@@ -1,0 +1,13 @@
+# Dépendances du Space (Gradio lui-même est installé par Hugging Face, selon
+# `sdk_version` dans README.md). Mêmes versions que l'API
+# (backend/services/core-service/requirements.txt), sauf torch : ZeroGPU
+# accepte PyTorch 2.8 à 2.13, l'API locale tourne en 2.14 (processeur).
+spaces==0.51.3
+torch==2.13.0
+transformers==5.16.1
+peft==0.20.0
+sentencepiece==0.2.2
+safetensors==0.8.0
+numpy==2.5.2
+scipy==1.18.1
+soundfile==0.14.0

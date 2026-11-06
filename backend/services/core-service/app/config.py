@@ -16,7 +16,7 @@ le même code en dev/staging/production, seule la config change.
 import re
 from typing import Annotated
 
-from pydantic import field_validator, model_validator
+from pydantic import SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 # Valeur d'exemple, volontairement identique dans .env.example : sert de
@@ -41,6 +41,19 @@ class Settings(BaseSettings):
     # texte en français, la base de connaissances, l'espace agent, l'annuaire
     # et les statistiques fonctionnent sans aucun modèle chargé.
     load_models_on_startup: bool = True
+
+    # --- Voix et mooré/dioula à distance (Space Hugging Face ZeroGPU) ---
+    # Nom du Space qui fait tourner les modèles (ex: "owner/laafi-ma-voice",
+    # voir hf-space/ et docs/DEPLOY.md). Vide : pas d'appel à distance. Utilisé
+    # SEULEMENT quand les modèles ne sont pas chargés sur cette machine.
+    voice_space: str = ""
+    # Jeton Hugging Face (lecture seule) : le quota de carte graphique du
+    # compte de ce jeton est utilisé. `SecretStr` : jamais affiché en clair,
+    # ni dans les logs, ni dans un `repr(settings)`.
+    hf_token: SecretStr = SecretStr("")
+    # Attente maximale d'une réponse du Space, réveil et file d'attente
+    # compris (un Space endormi met parfois plusieurs minutes à démarrer).
+    voice_space_timeout_seconds: float = 180.0
 
     # --- Sécurité ---
 
@@ -115,6 +128,13 @@ class Settings(BaseSettings):
     # développement local. En production : une URL PostgreSQL (voir
     # docs/DEPLOY.md) — le code SQLAlchemy ne change pas.
     database_url: str = "sqlite:///./dev.db"
+
+    @property
+    def remote_voice_enabled(self) -> bool:
+        """Vrai si la voix et la traduction passent par le Space : un Space
+        est configuré ET les modèles ne sont pas chargés ici (des modèles
+        locaux passent toujours en premier)."""
+        return bool(self.voice_space.strip()) and not self.load_models_on_startup
 
     @field_validator("admin_emails", mode="before")
     @classmethod

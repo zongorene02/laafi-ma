@@ -65,7 +65,10 @@ prend 1 à 3 minutes.
 ## Déployer
 
 Il n'y a pas d'image Docker. La démo en ligne tourne sur le runtime Python
-natif de Render (`render.yaml`, voir [`docs/DEPLOY.md`](docs/DEPLOY.md)).
+natif de Render (`render.yaml`, voir [`docs/DEPLOY.md`](docs/DEPLOY.md)). La
+voix et le mooré/dioula tournent sur un Space Hugging Face gratuit (ZeroGPU,
+dossier `hf-space/`), appelé par l'API quand `VOICE_SPACE` est réglé : 5
+minutes de carte graphique par jour, premier appel lent.
 
 ## Vérifications (identiques à la CI)
 

@@ -16,6 +16,9 @@ __pycache__/
 # le dossier lui-même (via .gitkeep).
 backend/services/core-service/models/*
 !backend/services/core-service/models/.gitkeep
+# Copie de l'adaptateur mooré pour le Space Hugging Face (49 Mo) : envoyée
+# seulement dans le dépôt du Space, pas sur GitHub (voir docs/DEPLOY.md).
+hf-space/moore-nllb-lora-adapter/
 
 # Fichiers générés pendant les tests manuels
 *.wav

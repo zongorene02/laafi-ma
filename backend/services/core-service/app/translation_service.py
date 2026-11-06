@@ -34,9 +34,12 @@ import threading
 from collections import OrderedDict
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from app.languages import PIVOT_LANG, to_nllb_code
+
+if TYPE_CHECKING:
+    from app.remote_voice import RemoteTranslationService
 
 MODEL_NAME = "facebook/nllb-200-distilled-600M"
 MOORE_ADAPTER_PATH = Path(__file__).resolve().parent.parent / "models" / "moore-nllb-lora-adapter"
@@ -264,5 +267,18 @@ class TranslationService:
             return self._translate_one_hop(pivot_text, PIVOT_LANG, "mos", use_moore_adapter=True)
 
 
+def _build_translation_service() -> "TranslationService | RemoteTranslationService":
+    """Modèle sur cette machine, ou sur le Space Hugging Face quand
+    VOICE_SPACE est réglé et que les modèles ne sont pas chargés ici (voir
+    remote_voice.py). Import paresseux : sans Space, rien ne change."""
+    from app.config import settings
+
+    if settings.remote_voice_enabled:
+        from app.remote_voice import RemoteTranslationService
+
+        return RemoteTranslationService()
+    return TranslationService()
+
+
 # Instance unique partagée par toute l'application (singleton).
-translation_service = TranslationService()
+translation_service = _build_translation_service()

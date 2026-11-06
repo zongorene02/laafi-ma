@@ -14,6 +14,7 @@ def test_health_without_models(client):
         "translation_model_loaded": False,
         "speech_model_loaded": False,
         "fast_mode_available": False,
+        "voice_backend": "none",
         "database": "ok",
     }
 
@@ -21,6 +22,7 @@ def test_health_without_models(client):
 def test_health_reports_loaded_models(client, models_loaded):
     body = client.get("/health").json()
     assert body["translation_model_loaded"] is True and body["speech_model_loaded"] is True
+    assert body["voice_backend"] == "local"
 
 
 def test_media_never_escapes_the_media_directory(client):

@@ -24,9 +24,12 @@ des résultats corrects — un compromis raisonnable pour un prototype.
 """
 
 import threading
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from app.remote_voice import RemoteSpeechService
 
 WHISPER_MODEL = "openai/whisper-small"
 MMS_ASR_MODEL = "facebook/mms-1b-all"
@@ -139,4 +142,17 @@ class SpeechService:
         return waveform.squeeze().numpy(), model.config.sampling_rate
 
 
-speech_service = SpeechService()
+def _build_speech_service() -> "SpeechService | RemoteSpeechService":
+    """Modèles sur cette machine, ou sur le Space Hugging Face quand
+    VOICE_SPACE est réglé et que les modèles ne sont pas chargés ici (voir
+    remote_voice.py). Import paresseux : sans Space, rien ne change."""
+    from app.config import settings
+
+    if settings.remote_voice_enabled:
+        from app.remote_voice import RemoteSpeechService
+
+        return RemoteSpeechService()
+    return SpeechService()
+
+
+speech_service = _build_speech_service()

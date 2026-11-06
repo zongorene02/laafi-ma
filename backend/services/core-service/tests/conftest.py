@@ -36,6 +36,14 @@ from app.security import hash_password
 from app.speech_service import speech_service
 from app.translation_service import translation_service
 
+# Les doublures ci-dessous remplacent des attributs des modèles LOCAUX. Avec
+# VOICE_SPACE réglé (dans un .env par exemple) et LOAD_MODELS_ON_STARTUP=false,
+# l'app utiliserait le Space à la place : on le dit clairement plutôt que
+# d'échouer de façon obscure. La voix à distance a ses propres tests
+# (test_remote_voice.py), sans aucun appel réseau.
+if settings.remote_voice_enabled:
+    raise pytest.UsageError("VOICE_SPACE est réglé : videz-le (ou LOAD_MODELS_ON_STARTUP=true) pour lancer les tests.")
+
 # `StaticPool` : toutes les requêtes réutilisent LA MÊME connexion SQLite en
 # mémoire, pour que les données écrites par une requête soient visibles par
 # la suivante. Clés étrangères activées comme sur la vraie base.

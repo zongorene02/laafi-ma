@@ -58,6 +58,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         translation_service.load()
         logger.info("loading_speech_models")
         speech_service.load()
+    elif settings.remote_voice_enabled:
+        # Voix et mooré/dioula sur le Space Hugging Face, contacté à la
+        # première requête vocale seulement (voir remote_voice.py). Le nom du
+        # Space est public ; le jeton n'est jamais journalisé.
+        logger.info("startup.remote_voice", voice_space=settings.voice_space)
     else:
         # Mode "léger" : l'assistant texte en français, la base de
         # connaissances, l'espace agent, l'annuaire et les statistiques
@@ -74,7 +79,9 @@ communautaires et capsules d'apprentissage — en français, mooré et dioula.
 
 Seuls des contenus **validés** par des professionnels de santé sont servis.
 Toutes les IA utilisées sont **open source** (Whisper, NLLB-200, MMS) et
-tournent sur nos serveurs : aucune donnée n'est envoyée à un service tiers.
+tournent sur nos serveurs, ou, pour la démo en ligne, sur notre propre Space
+Hugging Face (`voice_backend: "remote"` dans `/health`), qui ne journalise
+rien. Aucune donnée n'est envoyée à un autre service.
 """.strip()
 
 OPENAPI_TAGS = [
