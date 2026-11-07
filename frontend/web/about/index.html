@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ztech · Laafi Ma</title>
+  <meta name="description" content="Ztech builds Laafi Ma, an open-source, voice-first health and protection app for women and girls in Burkina Faso, in Mooré, Dioula and French.">
+  <link rel="icon" type="image/png" href="../favicon.png">
+  <style>
+    :root {
+      --bg: #FFF8F2; --surface: #FFFFFF; --text: #2B221D; --muted: #6B5A50;
+      --accent: #B4532A; --accent-soft: #F8EDE3; --border: #EBD8C8;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1A1411; --surface: #231B17; --text: #F8EDE3; --muted: #C9B5A7;
+        --accent: #F4A27A; --accent-soft: #2B221D; --border: #3D312A;
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text);
+      font: 17px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+    header p { margin: 0; color: var(--muted); }
+    h1 { font-size: clamp(28px, 6vw, 40px); line-height: 1.15; margin: 4px 0 12px; }
+    h2 { font-size: 22px; margin: 40px 0 8px; }
+    .lead { font-size: 19px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin: 24px 0; }
+    .btn { display: inline-block; padding: 12px 18px; border-radius: 12px; text-decoration: none;
+      font-weight: 600; border: 2px solid var(--accent); color: var(--accent); }
+    .btn.primary { background: var(--accent); color: var(--bg); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
+    .card h3 { margin: 0 0 4px; font-size: 17px; }
+    .card p { margin: 0; color: var(--muted); font-size: 15px; }
+    ul { padding-left: 20px; }
+    .note { background: var(--accent-soft); border-radius: 12px; padding: 12px 16px; font-size: 15px; }
+    footer { margin-top: 48px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--border); padding-top: 16px; }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <p>Ztech · Bobo-Dioulasso, Burkina Faso</p>
+    <h1>Laafi Ma: health within every woman's reach</h1>
+    <p class="lead">An open-source, voice-first app for women and girls in Burkina Faso. It speaks
+      Mooré, Dioula and French, works for women who cannot read, and keeps working offline.</p>
+  </header>
+
+  <div class="actions">
+    <a class="btn primary" href="../">Open the live demo</a>
+    <a class="btn" href="https://github.com/zongorene02/laafi-ma">Source code (MIT)</a>
+    <a class="btn" href="../admin/#/public">Public statistics</a>
+  </div>
+
+  <h2>The problem</h2>
+  <p>Many rural women in Burkina Faso speak only Mooré or Dioula and cannot read French, the
+    language of most health apps. Care during pregnancy and family planning are free, but the
+    information does not reach women in their language, at the right time. Paper health records
+    get lost, and a woman facing violence often cannot call for help in front of others.</p>
+
+  <h2>What Laafi Ma does</h2>
+  <div class="grid">
+    <div class="card"><h3>Voice health assistant</h3><p>A woman asks aloud in her language. Answers come
+      only from a vetted base; danger signs send her to care.</p></div>
+    <div class="card"><h3>Private health record</h3><p>Cycle, pregnancy, children's vaccines,
+      prescriptions and reminders, encrypted on her phone.</p></div>
+    <div class="card"><h3>Help and protection</h3><p>Discreet help request, directory of services,
+      calculator disguise and quick exit.</p></div>
+    <div class="card"><h3>Health worker space</h3><p>Offline tool for community health workers:
+      follow-up, decision aid, anonymous referrals.</p></div>
+    <div class="card"><h3>Learn</h3><p>Short audio lessons for girls, mothers, men and families,
+      with a quiz and no grades.</p></div>
+  </div>
+
+  <h2>Safety by design</h2>
+  <ul>
+    <li>Health data stays on the woman's phone, encrypted. The server only gets anonymous counts.</li>
+    <li>Public statistics hide any number under 10, so no woman can be identified.</li>
+    <li>The assistant never diagnoses or prescribes. It does not generate free medical text.</li>
+  </ul>
+
+  <h2>Where we are</h2>
+  <ul>
+    <li>Working demo online: app, health worker space, admin console and public statistics.</li>
+    <li>Open-source voice engine: speech recognition, translation and speech synthesis in Mooré,
+      Dioula and French.</li>
+    <li>Next: validation of all health content by a midwife, review of Mooré and Dioula by native
+      speakers, and a first pilot with women and health workers.</li>
+  </ul>
+  <p class="note">The demo uses public WHO and UNFPA guidance that a midwife has not reviewed yet, and
+    the app says so. It holds no real patient data.</p>
+
+  <h2>Version française</h2>
+  <p><strong>Laafi Ma</strong> est une application de santé et de protection pour les femmes et les
+    filles du Burkina Faso, à la voix, en mooré, en dioula et en français. Elle réunit un assistant
+    santé vocal, un carnet de santé sur le téléphone, une aide discrète contre les violences, un
+    espace pour les agents de santé et des capsules audio. Le code est libre, sous licence MIT.</p>
+
+  <footer>
+    <p>Ztech, Bobo-Dioulasso, Burkina Faso · Founder: René Zongo ·
+      Contact: <a href="https://github.com/zongorene02/laafi-ma/issues">github.com/zongorene02/laafi-ma</a></p>
+  </footer>
+</main>
+</body>
+</html>
